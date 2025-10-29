@@ -11,10 +11,11 @@ export const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: 'postgres',
+    schema: 'EventHub',
     dialectOptions: {
       ssl: {
         require: true,
-        rejectUnauthorized: false, // Aiven richiede questo
+        rejectUnauthorized: false, 
       },
     },
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
