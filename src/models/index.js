@@ -13,6 +13,7 @@ const Report = ReportModel(sequelize, DataTypes);
 
 //relations
 
+Registration.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
 User.hasMany(Event, { foreignKey: 'creator_id', as: 'events' });
 Event.belongsTo(User, { foreignKey: 'creator_id', as: 'creator' });
 

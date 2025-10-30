@@ -9,6 +9,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
 import eventRoutes from './event.routes.js';
+import registrationRoutes from './registration.routes.js';
 
 const router = Router();
 
@@ -19,6 +20,8 @@ router.get('/', async (req, res) => {
 });
 
 router.use('/events', eventRoutes);
+
+router.use('/registrations', registrationRoutes);
 
 router.use('/auth', authRoutes);
 
