@@ -1,4 +1,5 @@
 import { Event, User } from '../models/index.js';
+import { Op } from 'sequelize';
 
 /**
  * @desc Logged user creates an event
@@ -33,9 +34,9 @@ export async function getAllEvents(req, res) {
   const { category, location, date } = req.query;
   const where = { status: 'APPROVED' };
 
-  if (category) where.category = category;
-  if (location) where.location = location;
-  if (date) where.date = date;
+  if (category) where.category = { [Op.iLike]: category };
+  if (location) where.location = { [Op.iLike]: location };
+  if (date) where.date = date; 
 
   const events = await Event.findAll({
     where,
