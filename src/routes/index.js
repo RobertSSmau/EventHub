@@ -8,6 +8,7 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
+import eventRoutes from './event.routes.js';
 
 const router = Router();
 
@@ -16,6 +17,8 @@ router.use('/users', userRoutes);
 router.get('/', async (req, res) => {
   res.json({ message: 'Welcome to EventHub API!' });
 });
+
+router.use('/events', eventRoutes);
 
 router.use('/auth', authRoutes);
 
