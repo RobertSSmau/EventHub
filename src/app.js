@@ -6,6 +6,7 @@ import morgan from 'morgan';
 import { connectDB } from './config/db.js';
 import routes from './routes/index.js';
 import 'express-async-errors';
+import { setupSwagger } from './config/swagger.js';
 
 const app = express();
 
@@ -22,5 +23,7 @@ app.get('/api/health', async (req, res) => {
 
 // Routes
 app.use('/api', routes);
+
+setupSwagger(app);
 
 export default app;

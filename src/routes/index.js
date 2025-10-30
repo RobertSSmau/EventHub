@@ -1,3 +1,10 @@
+/**
+ * @openapi
+ * tags:
+ *   name: System
+ *   description: API health and root endpoints
+ */
+
 import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
