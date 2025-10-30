@@ -18,6 +18,7 @@ import {
   rejectEvent,
   getMyEvents,
 } from '../controllers/event.controller.js';
+import { getEventParticipants } from '../controllers/event.controller.js';
 
 const router = Router();
 
@@ -267,6 +268,52 @@ router.patch('/:id/approve', verifyToken, checkRole('ADMIN'), approveEvent);
  *         description: Event not found
  */
 router.patch('/:id/reject', verifyToken, checkRole('ADMIN'), rejectEvent);
+
+/**
+ * @openapi
+ * /events/{id}/participants:
+ *   get:
+ *     summary: Get all participants of a specific event
+ *     description: Returns the list of users registered to an event. Only the event creator, an admin, or participants of the event can view this list.
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: ID of the event
+ *     responses:
+ *       200:
+ *         description: Returns list of participants
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     example: 3
+ *                   username:
+ *                     type: string
+ *                     example: "mario"
+ *                   email:
+ *                     type: string
+ *                     example: "mario@mail.com"
+ *                   registered_at:
+ *                     type: string
+ *                     format: date-time
+ *                     example: "2025-10-30T10:21:05.321Z"
+ *       403:
+ *         description: Not authorized to view participants
+ *       404:
+ *         description: Event not found
+ */
+router.get('/:id/participants', verifyToken, getEventParticipants);
 
 router.use(errors());
 export default router;

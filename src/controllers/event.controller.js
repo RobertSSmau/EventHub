@@ -1,6 +1,6 @@
-import { Event, User } from '../models/index.js';
+import { Event, User, Registration  } from '../models/index.js';
 import { Op } from 'sequelize';
-
+import { userDTO } from '../dto/user.dto.js';
 /**
  * @desc Logged user creates an event
  * @route POST /api/events
@@ -129,4 +129,44 @@ export async function getMyEvents(req, res) {
     order: [['date', 'ASC']],
   });
   res.json(events);
+}
+
+
+/**
+ * @desc Get all participants of an event (visible only to creator, admin or participants)
+ * @route GET /api/events/:id/participants
+ */
+export async function getEventParticipants(req, res) {
+  const { id } = req.params;
+  const event = await Event.findByPk(id);
+  if (!event) return res.status(404).json({ message: 'Event not found' });
+
+  const isCreator = event.creator_id === req.user.id;
+  const isAdmin = req.user.role === 'ADMIN';
+  const isParticipant = await Registration.findOne({
+    where: { user_id: req.user.id, event_id: id },
+  });
+
+  if (!isCreator && !isAdmin && !isParticipant) {
+    return res.status(403).json({ message: 'Not authorized to view participants' });
+  }
+
+  //JOIN
+  const participants = await User.findAll({
+    include: [
+      {
+        model: Event,
+        as: 'registeredEvents',
+        where: { id },
+        attributes: [],
+        through: { attributes: ['registered_at'] },
+      },
+    ],
+    attributes: ['id', 'username', 'email'],
+    order: [['username', 'ASC']],
+  });
+
+  // DTO
+  const dto = participants.map(u => userDTO(u, parseInt(id)));
+  res.json(dto);
 }
