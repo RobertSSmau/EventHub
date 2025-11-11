@@ -138,3 +138,6 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 all_code.txt
+LOGOUT_TEST.md
+PASSWORD_VALIDATION.md
+TEST_REPORT.md

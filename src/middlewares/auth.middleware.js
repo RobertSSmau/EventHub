@@ -7,6 +7,7 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv-safe';
 import { User } from '../models/index.js';
+import { isBlacklisted } from '../utils/tokenBlacklist.js';
 
 dotenv.config();
 
@@ -31,6 +32,12 @@ export async function verifyToken(req, res, next) {
 
     // Extract and verify JWT
     const token = authHeader.split(' ')[1];
+
+    // Check if token is blacklisted
+    if (isBlacklisted(token)) {
+      return res.status(401).json({ message: 'Token has been revoked' });
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Fetch user from DB to check if still active
@@ -46,12 +53,13 @@ export async function verifyToken(req, res, next) {
       return res.status(403).json({ message: 'User account is blocked' });
     }
 
-    // Attach user data to request
+    // Attach user data and token to request
     req.user = {
       id: user.id,
       username: user.username,
       role: user.role,
     };
+    req.token = token; // Store token for logout
 
     next();
   } catch (err) {

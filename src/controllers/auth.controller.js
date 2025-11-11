@@ -1,6 +1,7 @@
 import argon2 from 'argon2';
 import { User } from '../models/index.js';
 import { generateToken } from '../utils/token.js';
+import { addToBlacklist } from '../utils/tokenBlacklist.js';
 
 export async function register(req, res) {
   const { username, email, password } = req.body;
@@ -30,4 +31,16 @@ export async function login(req, res) {
 
   const token = generateToken(user);
   res.json({ message: 'Login successful', token });
+}
+
+/**
+ * @desc Logout user by blacklisting current token
+ * @route POST /api/auth/logout
+ */
+export async function logout(req, res) {
+  const token = req.token;
+  if (!token) return res.status(400).json({ message: 'No token found' });
+
+  addToBlacklist(token);
+  res.json({ message: 'Logout successful' });
 }
