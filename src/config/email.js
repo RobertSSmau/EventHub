@@ -5,26 +5,31 @@ let transporter = null;
 // Inizializza email transporter
 export async function initEmail() {
   try {
-    // Crea account Ethereal test (email fake per sviluppo)
-    const testAccount = await nodemailer.createTestAccount();
+    const emailUser = process.env.EMAIL_USER;
+    const emailPass = process.env.EMAIL_PASS;
+    
+    if (!emailUser || !emailPass) {
+      console.warn('⚠️ EMAIL_USER o EMAIL_PASS non configurati');
+      console.warn('⚠️ Le email non verranno inviate');
+      return null;
+    }
     
     transporter = nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      secure: false,
+      service: 'gmail',
       auth: {
-        user: testAccount.user,
-        pass: testAccount.pass
+        user: emailUser,
+        pass: emailPass // App Password di Gmail
       }
     });
     
-    console.log('📧 Email configurata (Ethereal test account)');
-    console.log(`   User: ${testAccount.user}`);
-    console.log('   Preview URL: https://ethereal.email');
+    // Verifica connessione
+    await transporter.verify();
+    console.log('📧 Gmail configurato correttamente');
+    console.log(`   Sender: ${emailUser}`);
     
     return transporter;
   } catch (error) {
-    console.error('❌ Errore configurazione email:', error.message);
+    console.error('❌ Errore configurazione Gmail:', error.message);
     return null;
   }
 }
@@ -36,10 +41,10 @@ export async function sendVerificationEmail(email, token) {
     return null;
   }
   
-  const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/verify-email/${token}`;
+  const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/verify-email/${token}`;
   
   const info = await transporter.sendMail({
-    from: '"EventHub" <noreply@eventhub.com>',
+    from: `"EventHub" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Conferma il tuo account EventHub',
     html: `
@@ -60,7 +65,6 @@ export async function sendVerificationEmail(email, token) {
   });
   
   console.log('📧 Email verifica inviata a:', email);
-  console.log('   Preview URL:', nodemailer.getTestMessageUrl(info));
   
   return info;
 }
@@ -72,10 +76,10 @@ export async function sendPasswordResetEmail(email, token) {
     return null;
   }
   
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/reset-password/${token}`;
+  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/api/auth/reset-password/${token}`;
   
   const info = await transporter.sendMail({
-    from: '"EventHub" <noreply@eventhub.com>',
+    from: `"EventHub" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: 'Reset Password - EventHub',
     html: `
@@ -96,7 +100,6 @@ export async function sendPasswordResetEmail(email, token) {
   });
   
   console.log('📧 Email reset password inviata a:', email);
-  console.log('   Preview URL:', nodemailer.getTestMessageUrl(info));
   
   return info;
 }
