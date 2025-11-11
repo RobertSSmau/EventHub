@@ -41,6 +41,6 @@ export async function logout(req, res) {
   const token = req.token;
   if (!token) return res.status(400).json({ message: 'No token found' });
 
-  addToBlacklist(token);
+  await addToBlacklist(token);
   res.json({ message: 'Logout successful' });
 }

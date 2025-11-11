@@ -34,7 +34,7 @@ export async function verifyToken(req, res, next) {
     const token = authHeader.split(' ')[1];
 
     // Check if token is blacklisted
-    if (isBlacklisted(token)) {
+    if (await isBlacklisted(token)) {
       return res.status(401).json({ message: 'Token has been revoked' });
     }
 

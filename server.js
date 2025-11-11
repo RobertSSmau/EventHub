@@ -1,5 +1,6 @@
 import app from './src/app.js';
 import { connectDB } from './src/config/db.js';
+import { initRedis } from './src/config/redis.js';
 import dotenv from 'dotenv-safe';
 import { User } from './src/models/index.js';
 
@@ -10,6 +11,7 @@ const PORT = process.env.PORT || 3000;
 (async () => {
   try {
     await connectDB();
+    initRedis();
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
     });
