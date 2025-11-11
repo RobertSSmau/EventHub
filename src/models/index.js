@@ -5,13 +5,13 @@ import EventModel from './event.model.js';
 import RegistrationModel from './registration.model.js';
 import ReportModel from './report.model.js';
 
-// initialization
+// Model initialization
 const User = UserModel(sequelize, DataTypes);
 const Event = EventModel(sequelize, DataTypes);
 const Registration = RegistrationModel(sequelize, DataTypes);
 const Report = ReportModel(sequelize, DataTypes);
 
-//relations
+// Model associations
 
 Registration.belongsTo(Event, { foreignKey: 'event_id', as: 'event' });
 User.hasMany(Event, { foreignKey: 'creator_id', as: 'events' });
@@ -29,11 +29,14 @@ Event.belongsToMany(User, {
 });
 
 User.hasMany(Report, { foreignKey: 'reporter_id', as: 'reports' });
-Event.hasMany(Report, { foreignKey: 'event_id', as: 'eventReports' });
-Report.belongsTo(User, { foreignKey: 'reporter_id', as: 'reporter' });
-Report.belongsTo(Event, { foreignKey: 'event_id', as: 'reportedEvent' });
+User.hasMany(Report, { foreignKey: 'reported_user_id', as: 'receivedReports' });
+Event.hasMany(Report, { foreignKey: 'reported_event_id', as: 'eventReports' });
 
-// autentication
+Report.belongsTo(User, { foreignKey: 'reporter_id', as: 'reporter' });
+Report.belongsTo(User, { foreignKey: 'reported_user_id', as: 'reportedUser' });
+Report.belongsTo(Event, { foreignKey: 'reported_event_id', as: 'reportedEvent' });
+
+// Database authentication
 await sequelize.authenticate();
 console.log('Models initialized and connected to DB.');
 

@@ -10,6 +10,7 @@ import authRoutes from './auth.routes.js';
 import userRoutes from './user.routes.js';
 import eventRoutes from './event.routes.js';
 import registrationRoutes from './registration.routes.js';
+import reportRoutes from './report.routes.js';
 
 const router = Router();
 
@@ -24,6 +25,8 @@ router.use('/events', eventRoutes);
 router.use('/registrations', registrationRoutes);
 
 router.use('/auth', authRoutes);
+
+router.use('/reports', reportRoutes);
 
 router.get('/boom', async (req, res) => {
   throw new Error('crash');

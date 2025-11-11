@@ -45,20 +45,31 @@ CREATE TABLE registrations (
 );
 
 CREATE TABLE reports (
-    id              SERIAL,
-    reporter_id     INTEGER NOT NULL,
-    event_id        INTEGER NOT NULL,
-    reason          TEXT    NOT NULL,
-    created_at      TIMESTAMP DEFAULT NOW(),
+    id                  SERIAL,
+    reporter_id         INTEGER NOT NULL,
+    reported_user_id    INTEGER,
+    reported_event_id   INTEGER,
+    reason              TEXT NOT NULL,
+    status              VARCHAR(20) DEFAULT 'PENDING',
+    created_at          TIMESTAMP DEFAULT NOW(),
     CONSTRAINT pk_reports PRIMARY KEY (id),
-    CONSTRAINT fk_reports_user FOREIGN KEY (reporter_id)
+    CONSTRAINT fk_reports_reporter FOREIGN KEY (reporter_id)
         REFERENCES users (id) ON DELETE CASCADE,
-    CONSTRAINT fk_reports_event FOREIGN KEY (event_id)
-        REFERENCES events (id) ON DELETE CASCADE
+    CONSTRAINT fk_reports_reported_user FOREIGN KEY (reported_user_id)
+        REFERENCES users (id) ON DELETE CASCADE,
+    CONSTRAINT fk_reports_reported_event FOREIGN KEY (reported_event_id)
+        REFERENCES events (id) ON DELETE CASCADE,
+    CONSTRAINT chk_report_target CHECK (
+        (reported_user_id IS NOT NULL AND reported_event_id IS NULL) OR
+        (reported_user_id IS NULL AND reported_event_id IS NOT NULL)
+    ),
+    CONSTRAINT chk_reports_status CHECK (status IN ('PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED'))
 );
 
 CREATE INDEX idx_events_date       ON events (date);
 CREATE INDEX idx_events_category   ON events (category);
 CREATE INDEX idx_events_status     ON events (status);
 CREATE INDEX idx_reg_event_id      ON registrations (event_id);
-CREATE INDEX idx_rep_event_id      ON reports (event_id);
+CREATE INDEX idx_reports_event_id  ON reports (reported_event_id);
+CREATE INDEX idx_reports_user_id   ON reports (reported_user_id);
+CREATE INDEX idx_reports_status    ON reports (status);
