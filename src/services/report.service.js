@@ -5,6 +5,7 @@
 
 import { Report, Event, User } from '../models/index.js';
 import { Op } from 'sequelize';
+import { getIO } from '../config/socket.js';
 
 /**
  * Create a new report
@@ -37,6 +38,48 @@ export async function createReport(userId, reportData) {
     description,
     status: 'pending',
   });
+
+  // Fetch full report details for notification
+  const fullReport = await Report.findByPk(report.id, {
+    include: [
+      { model: User, as: 'reporter', attributes: ['id', 'username', 'email'] },
+      { model: Event, as: 'event', attributes: ['id', 'title', 'event_date', 'location'] },
+    ],
+  });
+
+  // 🔔 REAL-TIME NOTIFICATION to all ADMIN users
+  try {
+    const io = getIO();
+    const adminUsers = await User.findAll({ 
+      where: { role: 'ADMIN' },
+      attributes: ['id']
+    });
+
+    // Emit to each admin's personal room
+    adminUsers.forEach(admin => {
+      io.to(`user:${admin.id}`).emit('report:new', {
+        reportId: fullReport.id,
+        reason: fullReport.reason,
+        description: fullReport.description,
+        reporter: {
+          id: fullReport.reporter.id,
+          username: fullReport.reporter.username
+        },
+        event: {
+          id: fullReport.event.id,
+          title: fullReport.event.title,
+          event_date: fullReport.event.event_date,
+          location: fullReport.event.location
+        },
+        createdAt: fullReport.created_at
+      });
+    });
+
+    console.log(`📢 Notified ${adminUsers.length} admin(s) of new report #${report.id}`);
+  } catch (error) {
+    console.error('Error sending real-time notification to admins:', error);
+    // Don't fail the request if notification fails
+  }
 
   return report;
 }
