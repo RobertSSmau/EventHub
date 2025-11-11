@@ -48,6 +48,8 @@ export function getRedisClient() {
   return redisClient;
 }
 
+export { redisClient as redis };
+
 /**
  * Close Redis connection
  */

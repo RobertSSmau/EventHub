@@ -32,6 +32,10 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      email_verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
@@ -42,8 +46,6 @@ export default (sequelize, DataTypes) => {
       },
     },
     {
-      schema: 'EventHub',
-      tableName: 'users',
       freezeTableName: true,
       timestamps: false,
     }

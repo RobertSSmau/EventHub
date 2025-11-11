@@ -7,7 +7,15 @@
 
 import { Router } from 'express';
 import { celebrate, Joi, errors } from 'celebrate';
-import { register, login, logout } from '../controllers/auth.controller.js';
+import { 
+  register, 
+  login, 
+  logout, 
+  verifyEmail, 
+  resendVerification, 
+  forgotPassword, 
+  resetPassword 
+} from '../controllers/auth.controller.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import { PASSWORD_REGEX, VALIDATION_MESSAGES } from '../utils/validation.js';
 
@@ -165,6 +173,138 @@ router.get('/password-requirements', (req, res) => {
     pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$',
   });
 });
+
+/**
+ * @openapi
+ * /auth/verify-email/{token}:
+ *   get:
+ *     summary: Verify email with token
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
+router.get('/verify-email/:token', verifyEmail);
+
+/**
+ * @openapi
+ * /auth/resend-verification:
+ *   post:
+ *     summary: Resend verification email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Verification email sent
+ *       404:
+ *         description: User not found
+ */
+router.post(
+  '/resend-verification',
+  celebrate({
+    body: Joi.object({
+      email: Joi.string().email().required(),
+    }),
+  }),
+  resendVerification
+);
+
+/**
+ * @openapi
+ * /auth/forgot-password:
+ *   post:
+ *     summary: Request password reset email
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Reset email sent if user exists
+ */
+router.post(
+  '/forgot-password',
+  celebrate({
+    body: Joi.object({
+      email: Joi.string().email().required(),
+    }),
+  }),
+  forgotPassword
+);
+
+/**
+ * @openapi
+ * /auth/reset-password:
+ *   post:
+ *     summary: Reset password with token
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               token:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *                 minLength: 8
+ *     responses:
+ *       200:
+ *         description: Password reset successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
+router.post(
+  '/reset-password',
+  celebrate({
+    body: Joi.object({
+      token: Joi.string().required(),
+      newPassword: Joi.string()
+        .min(8)
+        .pattern(PASSWORD_REGEX)
+        .required()
+        .messages({
+          'string.min': VALIDATION_MESSAGES.password.min,
+          'string.pattern.base': VALIDATION_MESSAGES.password.pattern,
+          'any.required': VALIDATION_MESSAGES.password.required,
+        }),
+    }),
+  }),
+  resetPassword
+);
 
 router.use(errors());
 
