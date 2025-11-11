@@ -1,29 +1,27 @@
-import { Event, User, Registration  } from '../models/index.js';
-import { Op } from 'sequelize';
-import { userDTO } from '../dto/user.dto.js';
+/**
+ * Event Controller
+ * REST endpoints for event operations
+ */
+
+import * as eventService from '../services/event.service.js';
+import { Registration } from '../models/index.js';
+
 /**
  * @desc Logged user creates an event
  * @route POST /api/events
  */
 export async function createEvent(req, res) {
-  const { title, description, category, location, date, capacity, image_url } = req.body;
-
-  const newEvent = await Event.create({
-    title,
-    description,
-    category,
-    location,
-    date,
-    capacity,
-    image_url,
-    creator_id: req.user.id, 
-    status: 'PENDING',
-  });
-
-  res.status(201).json({
-    message: 'Event created successfully (pending approval)',
-    event: newEvent,
-  });
+  try {
+    const event = await eventService.createEvent(req.user.id, req.body);
+    
+    res.status(201).json({
+      message: 'Event created successfully (pending approval)',
+      event,
+    });
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ message: 'Error creating event' });
+  }
 }
 
 /**
@@ -31,20 +29,13 @@ export async function createEvent(req, res) {
  * @route GET /api/events
  */
 export async function getAllEvents(req, res) {
-  const { category, location, date } = req.query;
-  const where = { status: 'APPROVED' };
-
-  if (category) where.category = { [Op.iLike]: category };
-  if (location) where.location = { [Op.iLike]: location };
-  if (date) where.date = date; 
-
-  const events = await Event.findAll({
-    where,
-    include: { model: User, as: 'creator', attributes: ['username', 'email'] },
-    order: [['date', 'ASC']],
-  });
-
-  res.json(events);
+  try {
+    const result = await eventService.getAllEvents(req.query);
+    res.json(result.events);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ message: 'Error fetching events' });
+  }
 }
 
 /**
@@ -52,12 +43,14 @@ export async function getAllEvents(req, res) {
  * @route GET /api/events/:id
  */
 export async function getEventById(req, res) {
-  const event = await Event.findByPk(req.params.id, {
-    include: { model: User, as: 'creator', attributes: ['username', 'email'] },
-  });
-
-  if (!event) return res.status(404).json({ message: 'Event not found' });
-  res.json(event);
+  try {
+    const event = await eventService.getEventById(req.params.id);
+    res.json(event);
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    const status = error.message === 'Event not found' ? 404 : 500;
+    res.status(status).json({ message: error.message });
+  }
 }
 
 /**
@@ -65,17 +58,16 @@ export async function getEventById(req, res) {
  * @route PUT /api/events/:id
  */
 export async function updateEvent(req, res) {
-  const event = await Event.findByPk(req.params.id);
-
-  if (!event) return res.status(404).json({ message: 'Event not found' });
-  if (event.creator_id !== req.user.id && req.user.role !== 'ADMIN')
-    return res.status(403).json({ message: 'Not authorized to edit this event' });
-
-  const { title, description, category, location, date, capacity, image_url } = req.body;
-  Object.assign(event, { title, description, category, location, date, capacity, image_url });
-  await event.save();
-
-  res.json({ message: 'Event updated successfully', event });
+  try {
+    const event = await eventService.updateEvent(req.user.id, req.params.id, req.body);
+    
+    res.json({ message: 'Event updated successfully', event });
+  } catch (error) {
+    console.error('Error updating event:', error);
+    const status = error.message === 'Event not found' ? 404 :
+                   error.message === 'Not authorized to update this event' ? 403 : 500;
+    res.status(status).json({ message: error.message });
+  }
 }
 
 /**
@@ -83,14 +75,17 @@ export async function updateEvent(req, res) {
  * @route DELETE /api/events/:id
  */
 export async function deleteEvent(req, res) {
-  const event = await Event.findByPk(req.params.id);
-  if (!event) return res.status(404).json({ message: 'Event not found' });
-
-  if (event.creator_id !== req.user.id && req.user.role !== 'ADMIN')
-    return res.status(403).json({ message: 'Not authorized to delete this event' });
-
-  await event.destroy();
-  res.json({ message: 'Event deleted successfully' });
+  try {
+    const isAdmin = req.user.role === 'ADMIN';
+    await eventService.deleteEvent(req.user.id, req.params.id, isAdmin);
+    
+    res.json({ message: 'Event deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting event:', error);
+    const status = error.message === 'Event not found' ? 404 :
+                   error.message === 'Not authorized to delete this event' ? 403 : 500;
+    res.status(status).json({ message: error.message });
+  }
 }
 
 /**
@@ -98,12 +93,14 @@ export async function deleteEvent(req, res) {
  * @route PATCH /api/events/:id/approve
  */
 export async function approveEvent(req, res) {
-  const event = await Event.findByPk(req.params.id);
-  if (!event) return res.status(404).json({ message: 'Event not found' });
-
-  event.status = 'APPROVED';
-  await event.save();
-  res.json({ message: 'Event approved', event });
+  try {
+    const event = await eventService.approveEvent(req.params.id);
+    res.json({ message: 'Event approved', event });
+  } catch (error) {
+    console.error('Error approving event:', error);
+    const status = error.message === 'Event not found' ? 404 : 500;
+    res.status(status).json({ message: error.message });
+  }
 }
 
 /**
@@ -111,24 +108,28 @@ export async function approveEvent(req, res) {
  * @route PATCH /api/events/:id/reject
  */
 export async function rejectEvent(req, res) {
-  const event = await Event.findByPk(req.params.id);
-  if (!event) return res.status(404).json({ message: 'Event not found' });
-
-  event.status = 'REJECTED';
-  await event.save();
-  res.json({ message: 'Event rejected', event });
+  try {
+    const event = await eventService.rejectEvent(req.params.id);
+    res.json({ message: 'Event rejected', event });
+  } catch (error) {
+    console.error('Error rejecting event:', error);
+    const status = error.message === 'Event not found' ? 404 : 500;
+    res.status(status).json({ message: error.message });
+  }
 }
 
 /**
- * @desc Gets all events created by loggged user
+ * @desc Gets all events created by logged user
  * @route GET /api/events/mine
  */
 export async function getMyEvents(req, res) {
-  const events = await Event.findAll({
-    where: { creator_id: req.user.id },
-    order: [['date', 'ASC']],
-  });
-  res.json(events);
+  try {
+    const events = await eventService.getUserEvents(req.user.id);
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching user events:', error);
+    res.status(500).json({ message: 'Error fetching events' });
+  }
 }
 
 
@@ -137,36 +138,27 @@ export async function getMyEvents(req, res) {
  * @route GET /api/events/:id/participants
  */
 export async function getEventParticipants(req, res) {
-  const { id } = req.params;
-  const event = await Event.findByPk(id);
-  if (!event) return res.status(404).json({ message: 'Event not found' });
+  try {
+    const { id } = req.params;
+    
+    // Check authorization (keep this in controller as it's HTTP-specific)
+    const event = await eventService.getEventById(id);
+    
+    const isCreator = event.creator_id === req.user.id;
+    const isAdmin = req.user.role === 'ADMIN';
+    const isParticipant = await Registration.findOne({
+      where: { user_id: req.user.id, event_id: id },
+    });
 
-  const isCreator = event.creator_id === req.user.id;
-  const isAdmin = req.user.role === 'ADMIN';
-  const isParticipant = await Registration.findOne({
-    where: { user_id: req.user.id, event_id: id },
-  });
+    if (!isCreator && !isAdmin && !isParticipant) {
+      return res.status(403).json({ message: 'Not authorized to view participants' });
+    }
 
-  if (!isCreator && !isAdmin && !isParticipant) {
-    return res.status(403).json({ message: 'Not authorized to view participants' });
+    const participants = await eventService.getEventParticipants(id);
+    res.json(participants);
+  } catch (error) {
+    console.error('Error fetching participants:', error);
+    const status = error.message === 'Event not found' ? 404 : 500;
+    res.status(status).json({ message: error.message });
   }
-
-  //JOIN
-  const participants = await User.findAll({
-    include: [
-      {
-        model: Event,
-        as: 'registeredEvents',
-        where: { id },
-        attributes: [],
-        through: { attributes: ['registered_at'] },
-      },
-    ],
-    attributes: ['id', 'username', 'email'],
-    order: [['username', 'ASC']],
-  });
-
-  // DTO
-  const dto = participants.map(u => userDTO(u, parseInt(id)));
-  res.json(dto);
 }

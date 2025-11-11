@@ -1,6 +1,9 @@
+import { createServer } from 'http';
 import { connectDB } from './src/config/db.js';
 import { initRedis } from './src/config/redis.js';
 import { initEmail } from './src/config/email.js';
+import { connectMongoDB } from './src/config/mongodb.js';
+import { initSocketIO } from './src/config/socket.js';
 import dotenv from 'dotenv-safe';
 
 dotenv.config();
@@ -16,15 +19,23 @@ const PORT = process.env.PORT || 3000;
     // Now import app (which will create middleware with Redis store)
     const { default: app } = await import('./src/app.js');
     
-    // Connect to database
+    // Create HTTP server for Socket.IO
+    const server = createServer(app);
+    
+    // Connect to databases
     await connectDB();
+    await connectMongoDB();
+    
+    // Initialize Socket.IO for chat
+    initSocketIO(server);
     
     // Initialize email service
     await initEmail();
     
     // Start server only after all services are ready
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`Socket.IO ready for chat connections`);
     });
   } catch (error) {
     console.error('Server startup failed:', error.message);

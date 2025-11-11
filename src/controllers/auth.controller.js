@@ -17,17 +17,23 @@ export async function register(req, res) {
     username, 
     email, 
     password_hash,
-    email_verified: false 
+    email_verified: true  // ⬅️ TEMP: Auto-verify for development
   });
 
-  // Genera token verifica e invia email
-  const verificationToken = await createVerificationToken(email);
-  await sendVerificationEmail(email, verificationToken);
+  // Generate verification token and send email
+  // const verificationToken = await createVerificationToken(email);
+  // await sendVerificationEmail(email, verificationToken);
 
   const token = generateToken(newUser);
   res.status(201).json({ 
-    message: 'User registered. Check your email to verify your account.', 
-    token 
+    message: 'User registered successfully.', // ⬅️ TEMP: without email verification
+    token,
+    user: {
+      id: newUser.id,
+      username: newUser.username,
+      email: newUser.email,
+      role: newUser.role
+    }
   });
 }
 
@@ -40,14 +46,24 @@ export async function login(req, res) {
   if (user.is_blocked)
     return res.status(403).json({ message: 'User account is blocked' });
 
-  if (!user.email_verified)
-    return res.status(403).json({ message: 'Please verify your email before logging in' });
+  // ⬅️ TEMP: Email verification disabled for development
+  // if (!user.email_verified)
+  //   return res.status(403).json({ message: 'Please verify your email before logging in' });
 
   const valid = await argon2.verify(user.password_hash, password);
   if (!valid) return res.status(401).json({ message: 'Invalid password' });
 
   const token = generateToken(user);
-  res.json({ message: 'Login successful', token });
+  res.json({ 
+    message: 'Login successful', 
+    token,
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    }
+  });
 }
 
 /**
@@ -62,7 +78,7 @@ export async function logout(req, res) {
   res.json({ message: 'Logout successful' });
 }
 
-// Verifica email con token
+// Verify email with token
 export async function verifyEmail(req, res) {
   const { token } = req.params;
   
@@ -81,7 +97,11 @@ export async function verifyEmail(req, res) {
   }
   
   await user.update({ email_verified: true });
-  res.json({ message: 'Email verified successfully. You can now log in.' });
+    res.json({ message: 'Email verified successfully. You can now log in.' });
+}
+
+// Reset password with token
+export async function requestPasswordReset(req, res) {
 }
 
 // Reinvia email di verifica

@@ -4,7 +4,7 @@ import swaggerUi from 'swagger-ui-express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// 🔧 Risolvi path assoluto (compatibile con ES Modules)
+// Resolve absolute path (compatible with ES Modules)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 

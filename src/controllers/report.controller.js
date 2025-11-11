@@ -1,185 +1,103 @@
-import { Report, User, Event, sequelize } from '../models/index.js';
-const { Op } = sequelize.Sequelize;
+/**
+ * Report Controller
+ * REST endpoints for report operations
+ */
 
-// Create new report
+import * as reportService from '../services/report.service.js';
+
+/**
+ * @desc Create a new report
+ * @route POST /api/reports
+ */
 export async function createReport(req, res) {
   try {
-    const { reported_user_id, reported_event_id, reason } = req.body;
-    const reporter_id = req.user.id;
-
-    // Verify target exists
-    if (reported_user_id) {
-      const user = await User.findByPk(reported_user_id);
-      if (!user) {
-        return res.status(404).json({ message: 'Reported user not found' });
-      }
-      if (reported_user_id === reporter_id) {
-        return res.status(400).json({ message: 'Cannot report yourself' });
-      }
-
-      // Check for duplicate report
-      const existingReport = await Report.findOne({
-        where: {
-          reporter_id,
-          reported_user_id,
-          status: ['PENDING', 'REVIEWED'],
-        },
-      });
-      if (existingReport) {
-        return res.status(400).json({ message: 'You have already reported this user' });
-      }
-    }
-
-    if (reported_event_id) {
-      const event = await Event.findByPk(reported_event_id);
-      if (!event) {
-        return res.status(404).json({ message: 'Reported event not found' });
-      }
-
-      // Check for duplicate report
-      const existingReport = await Report.findOne({
-        where: {
-          reporter_id,
-          reported_event_id,
-          status: ['PENDING', 'REVIEWED'],
-        },
-      });
-      if (existingReport) {
-        return res.status(400).json({ message: 'You have already reported this event' });
-      }
-    }
-
-    const report = await Report.create({
-      reporter_id,
-      reported_user_id,
-      reported_event_id,
-      reason,
-      status: 'PENDING',
-    });
-
+    const report = await reportService.createReport(req.user.id, req.body);
+    
     res.status(201).json({
-      message: 'Report submitted successfully',
+      message: 'Report created successfully',
       report,
     });
   } catch (error) {
     console.error('Error creating report:', error);
-    res.status(500).json({ message: 'Error creating report', error: error.message });
+    const status = error.message === 'Event not found' ? 404 :
+                   error.message === 'You have already reported this event' ? 400 : 500;
+    res.status(status).json({ message: error.message });
   }
 }
 
-// Get all reports (ADMIN)
+/**
+ * @desc Get all reports (Admin only)
+ * @route GET /api/reports
+ */
 export async function getAllReports(req, res) {
   try {
-    const { status, type } = req.query;
-
-    const where = {};
-    if (status) where.status = status;
-
-    // Filter by type
-    if (type === 'user') {
-      where.reported_user_id = { [Op.ne]: null };
-    } else if (type === 'event') {
-      where.reported_event_id = { [Op.ne]: null };
-    }
-
-    const reports = await Report.findAll({
-      where,
-      include: [
-        {
-          model: User,
-          as: 'reporter',
-          attributes: ['id', 'username', 'email'],
-        },
-        {
-          model: User,
-          as: 'reportedUser',
-          attributes: ['id', 'username', 'email'],
-          required: false,
-        },
-        {
-          model: Event,
-          as: 'reportedEvent',
-          attributes: ['id', 'title', 'category', 'status'],
-          required: false,
-        },
-      ],
-      order: [['created_at', 'DESC']],
+    const result = await reportService.getAllReports(req.query);
+    
+    res.json({
+      reports: result.reports,
+      pagination: {
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset,
+      },
     });
-
-    res.json(reports);
   } catch (error) {
     console.error('Error fetching reports:', error);
-    res.status(500).json({ message: 'Error fetching reports', error: error.message });
+    res.status(500).json({ message: 'Error fetching reports' });
   }
 }
 
-// Get current user's reports
+/**
+ * @desc Get reports created by logged user
+ * @route GET /api/reports/mine
+ */
 export async function getMyReports(req, res) {
   try {
-    const reports = await Report.findAll({
-      where: { reporter_id: req.user.id },
-      include: [
-        {
-          model: User,
-          as: 'reportedUser',
-          attributes: ['id', 'username'],
-          required: false,
-        },
-        {
-          model: Event,
-          as: 'reportedEvent',
-          attributes: ['id', 'title'],
-          required: false,
-        },
-      ],
-      order: [['created_at', 'DESC']],
-    });
-
+    const reports = await reportService.getUserReports(req.user.id);
     res.json(reports);
   } catch (error) {
     console.error('Error fetching user reports:', error);
-    res.status(500).json({ message: 'Error fetching reports', error: error.message });
+    res.status(500).json({ message: 'Error fetching reports' });
   }
 }
 
-// Update report status (ADMIN)
+/**
+ * @desc Update report status (Admin only)
+ * @route PATCH /api/reports/:id/status
+ */
 export async function updateReportStatus(req, res) {
   try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const report = await Report.findByPk(id);
-    if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
-    }
-
-    report.status = status;
-    await report.save();
-
+    const { status, admin_notes } = req.body;
+    const report = await reportService.updateReportStatus(
+      req.user.id,
+      req.params.id,
+      status,
+      admin_notes
+    );
+    
     res.json({
       message: 'Report status updated successfully',
       report,
     });
   } catch (error) {
     console.error('Error updating report:', error);
-    res.status(500).json({ message: 'Error updating report', error: error.message });
+    const statusCode = error.message === 'Report not found' ? 404 :
+                       error.message === 'Invalid status' ? 400 : 500;
+    res.status(statusCode).json({ message: error.message });
   }
 }
 
-// Delete report (ADMIN)
+/**
+ * @desc Delete report (Admin only)
+ * @route DELETE /api/reports/:id
+ */
 export async function deleteReport(req, res) {
   try {
-    const { id } = req.params;
-
-    const report = await Report.findByPk(id);
-    if (!report) {
-      return res.status(404).json({ message: 'Report not found' });
-    }
-
-    await report.destroy();
+    await reportService.deleteReport(req.params.id);
     res.json({ message: 'Report deleted successfully' });
   } catch (error) {
     console.error('Error deleting report:', error);
-    res.status(500).json({ message: 'Error deleting report', error: error.message });
+    const status = error.message === 'Report not found' ? 404 : 500;
+    res.status(status).json({ message: error.message });
   }
 }

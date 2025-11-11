@@ -1,6 +1,6 @@
 # 📦 EventHub Dependencies
 
-## Production (23)
+## Production (25)
 
 **Auth & Security**
 - `argon2` - Password hashing with Argon2 algorithm
@@ -12,6 +12,7 @@
 **Database**
 - `sequelize` - PostgreSQL ORM
 - `pg` + `pg-hstore` - PostgreSQL driver and serialization
+- `mongoose` - MongoDB ODM for chat messages and conversations
 
 **Redis**
 - `ioredis` - Redis client for token blacklist (Upstash)
@@ -19,6 +20,9 @@
 **Rate Limiting**
 - `express-rate-limit` - Rate limiting middleware
 - `rate-limit-redis` - Redis store for rate limiting
+
+**Real-time Communication**
+- `socket.io` - WebSocket library for real-time chat
 
 **Validation**
 - `joi` - Schema validation
@@ -59,23 +63,39 @@ npm install
 
 Required variables in `.env`:
 ```env
+# Server
 PORT=3000
-DATABASE_URL=postgresql://user:pass@host:5432/eventhub
+NODE_ENV=development
+
+# PostgreSQL Database
+DB_HOST=your-postgres-host
+DB_PORT=5432
+DB_NAME=eventhub
+DB_USER=your-user
+DB_PASS=your-password
+DB_SSL=true
+
+# MongoDB (Chat)
+MONGODB_URL=mongodb+srv://user:pass@cluster.mongodb.net/eventhub_chat
+
+# JWT
 JWT_SECRET=your-secret-key
+
+# Redis (Rate Limiting)
 REDIS_URL=redis://host:6379
+
+# Email
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-gmail-app-password
+
+# Client (CORS & Socket.IO)
+CLIENT_URL=http://localhost:3000
 ```
 
-## Total Dependencies: 24
+## Total Dependencies: 26
 
-**Production:** 23  
+**Production:** 25  
 **Development:** 1
-DB_HOST=
-DB_PORT=
-DB_NAME=
-DB_USER=
-DB_PASS=
 JWT_SECRET=
 REDIS_URL=  # Optional (fallback in-memory)
 ```
