@@ -18,6 +18,7 @@ import {
 } from '../controllers/auth.controller.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import { PASSWORD_REGEX, VALIDATION_MESSAGES } from '../utils/validation.js';
+import { authLimiter, emailLimiter } from '../middlewares/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -61,6 +62,7 @@ const router = Router();
 
 router.post(
   '/register',
+  authLimiter,
   celebrate({
     body: Joi.object({
       username: Joi.string()
@@ -126,6 +128,7 @@ router.post(
 
 router.post(
   '/login',
+  authLimiter,
   celebrate({
     body: Joi.object({
       email: Joi.string().email().required(),
@@ -220,6 +223,7 @@ router.get('/verify-email/:token', verifyEmail);
  */
 router.post(
   '/resend-verification',
+  emailLimiter,
   celebrate({
     body: Joi.object({
       email: Joi.string().email().required(),
@@ -252,6 +256,7 @@ router.post(
  */
 router.post(
   '/forgot-password',
+  emailLimiter,
   celebrate({
     body: Joi.object({
       email: Joi.string().email().required(),

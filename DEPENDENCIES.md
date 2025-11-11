@@ -1,53 +1,76 @@
-# 📦 Dipendenze EventHub
+# 📦 EventHub Dependencies
 
-## Production (20)
+## Production (23)
 
 **Auth & Security**
-- `argon2` - Hash password
-- `jsonwebtoken` - JWT tokens
-- `helmet` - HTTP security headers
-- `cors` - CORS
-- `accesscontrol` - RBAC
+- `argon2` - Password hashing with Argon2 algorithm
+- `jsonwebtoken` - JWT token generation and verification
+- `helmet` - HTTP security headers middleware
+- `cors` - Cross-Origin Resource Sharing
+- `accesscontrol` - Role-Based Access Control (RBAC)
 
 **Database**
-- `sequelize` - ORM PostgreSQL
-- `pg` + `pg-hstore` - PostgreSQL driver
+- `sequelize` - PostgreSQL ORM
+- `pg` + `pg-hstore` - PostgreSQL driver and serialization
 
 **Redis**
-- `ioredis` - Token blacklist (Upstash)
+- `ioredis` - Redis client for token blacklist (Upstash)
+
+**Rate Limiting**
+- `express-rate-limit` - Rate limiting middleware
+- `rate-limit-redis` - Redis store for rate limiting
 
 **Validation**
-- `joi` + `celebrate` - Input validation
-- `validator` - String validation
+- `joi` - Schema validation
+- `celebrate` - Joi middleware for Express
+- `validator` - String validation utilities
+
+**Email**
+- `nodemailer` - Email sending (Gmail SMTP)
 
 **Server**
 - `express` - Web framework
 - `express-async-errors` - Async error handling
-- `compression` - GZIP
-- `morgan` - Request logger
+- `compression` - GZIP compression
+- `morgan` - HTTP request logger
 
-**Docs**
-- `swagger-jsdoc` + `swagger-ui-express` - API docs
+**API Documentation**
+- `swagger-jsdoc` - Generate Swagger/OpenAPI from JSDoc
+- `swagger-ui-express` - Swagger UI for API docs
 
-**Config**
-- `dotenv-safe` - Environment variables
+**Configuration**
+- `dotenv-safe` - Environment variable validation
 
 **Utils**
-- `node-fetch` - HTTP client (test)
+- `node-fetch` - HTTP client
 
-## Dev (1)
-- `nodemon` - Auto-restart
+## Development (1)
+- `nodemon` - Auto-restart on file changes
 
 ---
 
-## Setup
+## Installation
+
 ```bash
 npm install
 ```
 
-## Env Variables
-```bash
+## Environment Variables
+
+Required variables in `.env`:
+```env
 PORT=3000
+DATABASE_URL=postgresql://user:pass@host:5432/eventhub
+JWT_SECRET=your-secret-key
+REDIS_URL=redis://host:6379
+EMAIL_USER=your-email@gmail.com
+EMAIL_PASS=your-gmail-app-password
+```
+
+## Total Dependencies: 24
+
+**Production:** 23  
+**Development:** 1
 DB_HOST=
 DB_PORT=
 DB_NAME=

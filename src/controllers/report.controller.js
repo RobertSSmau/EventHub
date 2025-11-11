@@ -16,12 +16,36 @@ export async function createReport(req, res) {
       if (reported_user_id === reporter_id) {
         return res.status(400).json({ message: 'Cannot report yourself' });
       }
+
+      // Check for duplicate report
+      const existingReport = await Report.findOne({
+        where: {
+          reporter_id,
+          reported_user_id,
+          status: ['PENDING', 'REVIEWED'],
+        },
+      });
+      if (existingReport) {
+        return res.status(400).json({ message: 'You have already reported this user' });
+      }
     }
 
     if (reported_event_id) {
       const event = await Event.findByPk(reported_event_id);
       if (!event) {
         return res.status(404).json({ message: 'Reported event not found' });
+      }
+
+      // Check for duplicate report
+      const existingReport = await Report.findOne({
+        where: {
+          reporter_id,
+          reported_event_id,
+          status: ['PENDING', 'REVIEWED'],
+        },
+      });
+      if (existingReport) {
+        return res.status(400).json({ message: 'You have already reported this event' });
       }
     }
 

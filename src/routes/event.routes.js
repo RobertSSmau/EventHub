@@ -19,6 +19,7 @@ import {
   getMyEvents,
 } from '../controllers/event.controller.js';
 import { getEventParticipants } from '../controllers/event.controller.js';
+import { eventCreationLimiter } from '../middlewares/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -104,6 +105,7 @@ router.get('/', getAllEvents);
 router.post(
   '/',
   verifyToken,
+  eventCreationLimiter,
   celebrate({
     body: Joi.object({
       title: Joi.string().min(3).required(),

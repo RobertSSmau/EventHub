@@ -138,6 +138,8 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 all_code.txt
+
+# Old test/setup documentation
 LOGOUT_TEST.md
 PASSWORD_VALIDATION.md
 TEST_REPORT.md
@@ -145,3 +147,9 @@ REDIS_SETUP.md
 REDIS_TEST_REPORT.md
 EMAIL_VERIFICATION_TEST.md
 GMAIL_SETUP.md
+ANTI_SPAM.md
+CHANGELOG.md
+DEPENDENCIES.md
+REDIS_PERSISTENCE.md
+TESTING_REDIS.md
+README.md

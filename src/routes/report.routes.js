@@ -16,6 +16,7 @@ import {
 } from '../controllers/report.controller.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import { isAdmin } from '../middlewares/role.middleware.js';
+import { reportLimiter } from '../middlewares/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -57,13 +58,14 @@ const router = Router();
 router.post(
   '/',
   verifyToken,
+  reportLimiter,
   celebrate({
     body: Joi.object({
       reported_user_id: Joi.number().integer().positive(),
       reported_event_id: Joi.number().integer().positive(),
       reason: Joi.string().min(10).max(1000).required(),
     })
-      .xor('reported_user_id', 'reported_event_id') // Uno dei due deve essere presente, ma non entrambi
+      .xor('reported_user_id', 'reported_event_id')
       .messages({
         'object.xor': 'Must specify either reported_user_id or reported_event_id, not both',
       }),

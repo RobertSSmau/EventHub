@@ -9,25 +9,49 @@ let redisClient = null;
 /**
  * Initialize Redis connection
  */
-export function initRedis() {
+export async function initRedis() {
   try {
     const redisUrl = process.env.REDIS_URL;
 
     if (!redisUrl) {
-      console.warn('REDIS_URL not found, using RAM blacklist');
+      console.warn('REDIS_URL not found, using RAM for rate limiting');
       return null;
     }
 
-    redisClient = new Redis(redisUrl, {
+    const config = {
       maxRetriesPerRequest: 3,
       retryStrategy(times) {
         const delay = Math.min(times * 50, 2000);
         return delay;
       },
-    });
+    };
 
-    redisClient.on('connect', () => {
-      console.log('Redis connected');
+    // Enable TLS if using rediss://
+    if (redisUrl.startsWith('rediss://')) {
+      config.tls = {
+        rejectUnauthorized: false, // For Upstash compatibility
+      };
+    }
+
+    redisClient = new Redis(redisUrl, config);
+
+    // Wait for connection
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Redis connection timeout (5s)'));
+      }, 5000);
+
+      redisClient.once('connect', () => {
+        clearTimeout(timeout);
+        console.log('Redis connected successfully');
+        resolve();
+      });
+
+      redisClient.once('error', (err) => {
+        clearTimeout(timeout);
+        console.error('Redis connection error:', err.message);
+        reject(err);
+      });
     });
 
     redisClient.on('error', (err) => {
@@ -37,6 +61,8 @@ export function initRedis() {
     return redisClient;
   } catch (error) {
     console.error('Failed to initialize Redis:', error.message);
+    console.warn('⚠️  Continuing with memory-based rate limiting');
+    redisClient = null;
     return null;
   }
 }

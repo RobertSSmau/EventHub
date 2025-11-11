@@ -12,6 +12,7 @@ import {
   unregisterFromEvent,
   getMyRegistrations,
 } from '../controllers/registration.controller.js';
+import { registrationLimiter } from '../middlewares/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -50,7 +51,7 @@ router.get('/mine', getMyRegistrations);
  *       201:
  *         description: Registration successful
  */
-router.post('/:eventId', registerToEvent);
+router.post('/:eventId', registrationLimiter, registerToEvent);
 
 /**
  * @openapi

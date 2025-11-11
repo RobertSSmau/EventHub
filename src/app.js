@@ -7,6 +7,7 @@ import { connectDB } from './config/db.js';
 import routes from './routes/index.js';
 import 'express-async-errors';
 import { setupSwagger } from './config/swagger.js';
+import { generalLimiter } from './middlewares/rateLimiter.middleware.js';
 
 const app = express();
 
@@ -15,6 +16,9 @@ app.use(cors());
 app.use(compression());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Apply global rate limiter
+app.use('/api', generalLimiter);
 
 // Health check
 app.get('/api/health', async (req, res) => {
