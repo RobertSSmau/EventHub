@@ -1,0 +1,47 @@
+<div class="login-container">
+  <div class="login-card">
+    <h1>EventHub Login</h1>
+    
+    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          name="email"
+          [(ngModel)]="credentials.email" 
+          required 
+          email
+          placeholder="your@email.com"
+          [disabled]="loading">
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input 
+          type="password" 
+          id="password" 
+          name="password"
+          [(ngModel)]="credentials.password" 
+          required
+          placeholder="Enter your password"
+          [disabled]="loading">
+      </div>
+
+      @if (error) {
+        <div class="error-message">{{ error }}</div>
+      }
+
+      <button 
+        type="submit" 
+        [disabled]="!loginForm.valid || loading"
+        class="btn-primary">
+        {{ loading ? 'Logging in...' : 'Login' }}
+      </button>
+    </form>
+
+    <div class="register-link">
+      <p>Don't have an account? <a routerLink="/register">Register here</a></p>
+    </div>
+  </div>
+</div>
