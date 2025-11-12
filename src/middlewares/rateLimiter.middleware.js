@@ -2,8 +2,16 @@ import rateLimit from 'express-rate-limit';
 import RedisStore from 'rate-limit-redis';
 import { getRedisClient } from '../config/redis.js';
 
+// In test environment, disable rate limiting
+const isTestEnv = process.env.NODE_ENV === 'test';
+
+// Pass-through middleware for tests
+const noopLimiter = (req, res, next) => next();
+
 // Create Redis store with deferred client
 const createRedisStore = (prefix) => {
+  if (isTestEnv) return undefined;
+  
   const redis = getRedisClient();
   if (!redis) {
     console.warn(`Redis not available for ${prefix}, using RAM`);
@@ -17,7 +25,7 @@ const createRedisStore = (prefix) => {
 };
 
 // General API rate limiter (100 requests per 15 minutes)
-export const generalLimiter = rateLimit({
+export const generalLimiter = isTestEnv ? noopLimiter : rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 100,
   message: 'Too many requests from this IP, please try again later.',
@@ -27,7 +35,7 @@ export const generalLimiter = rateLimit({
 });
 
 // Strict limiter for auth endpoints (5 requests per 15 minutes)
-export const authLimiter = rateLimit({
+export const authLimiter = isTestEnv ? noopLimiter : rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 5,
   message: 'Too many authentication attempts, please try again later.',
@@ -38,7 +46,7 @@ export const authLimiter = rateLimit({
 });
 
 // Report creation limiter (3 reports per hour per user)
-export const reportLimiter = rateLimit({
+export const reportLimiter = isTestEnv ? noopLimiter : rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 3,
   message: 'Too many reports submitted, please try again later.',
@@ -52,7 +60,7 @@ export const reportLimiter = rateLimit({
 });
 
 // Event creation limiter (10 events per day per user)
-export const eventCreationLimiter = rateLimit({
+export const eventCreationLimiter = isTestEnv ? noopLimiter : rateLimit({
   windowMs: 24 * 60 * 60 * 1000,
   max: 10,
   message: 'Too many events created today, please try again tomorrow.',
@@ -66,7 +74,7 @@ export const eventCreationLimiter = rateLimit({
 });
 
 // Registration limiter (20 event registrations per hour)
-export const registrationLimiter = rateLimit({
+export const registrationLimiter = isTestEnv ? noopLimiter : rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 20,
   message: 'Too many event registrations, please try again later.',
@@ -80,7 +88,7 @@ export const registrationLimiter = rateLimit({
 });
 
 // Email sending limiter (3 emails per hour)
-export const emailLimiter = rateLimit({
+export const emailLimiter = isTestEnv ? noopLimiter : rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 3,
   message: 'Too many emails sent, please try again later.',

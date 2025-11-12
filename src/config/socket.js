@@ -229,9 +229,14 @@ export function initSocketIO(server) {
 
 /**
  * Get Socket.IO instance
+ * Returns null if not initialized (e.g., in test environment)
  */
 export function getIO() {
   if (!io) {
+    // In test/development environment, return null instead of throwing
+    if (process.env.NODE_ENV === 'test') {
+      return null;
+    }
     throw new Error('Socket.IO not initialized');
   }
   return io;

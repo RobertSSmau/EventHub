@@ -35,23 +35,25 @@ export async function registerToEvent(req, res) {
   // 🔔 REAL-TIME NOTIFICATION to event creator
   try {
     const io = getIO();
-    const user = await User.findByPk(userId, { attributes: ['id', 'username', 'email'] });
-    
-    // Notify event creator
-    io.to(`user:${event.creator_id}`).emit('event:new_registration', {
-      eventId: event.id,
-      eventTitle: event.title,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      },
-      registeredAt: registration.registered_at,
-      currentParticipants: count + 1,
-      capacity: event.capacity
-    });
-    
-    console.log(`📢 Notified creator ${event.creator_id} of new registration to event ${event.id}`);
+    if (io) {  // Only send notification if Socket.IO is initialized
+      const user = await User.findByPk(userId, { attributes: ['id', 'username', 'email'] });
+      
+      // Notify event creator
+      io.to(`user:${event.creator_id}`).emit('event:new_registration', {
+        eventId: event.id,
+        eventTitle: event.title,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email
+        },
+        registeredAt: registration.registered_at,
+        currentParticipants: count + 1,
+        capacity: event.capacity
+      });
+      
+      console.log(`📢 Notified creator ${event.creator_id} of new registration to event ${event.id}`);
+    }
   } catch (error) {
     console.error('Error sending real-time notification:', error);
     // Don't fail the request if notification fails
@@ -87,7 +89,7 @@ export async function unregisterFromEvent(req, res) {
   try {
     const io = getIO();
     
-    if (event) {
+    if (io && event) {  // Only send notification if Socket.IO is initialized
       io.to(`user:${event.creator_id}`).emit('event:unregistration', {
         eventId: event.id,
         eventTitle: event.title,
