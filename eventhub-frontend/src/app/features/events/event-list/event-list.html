@@ -1,1 +1,77 @@
-<p>event-list works!</p>
+<div class="events-container">
+  <div class="header">
+    <div>
+      <h1>Upcoming Events</h1>
+      <p>Explore approved events and reserve your seat.</p>
+    </div>
+    @if (authService.isAuthenticated) {
+      <a routerLink="/dashboard" class="link-button">Go to my dashboard</a>
+    } @else {
+      <a routerLink="/login" class="link-button">Login to create events</a>
+    }
+  </div>
+
+  @if (successMessage) {
+    <div class="success-message">{{ successMessage }}</div>
+  }
+  @if (error) {
+    <div class="error-message">{{ error }}</div>
+  }
+
+  @if (loading) {
+    <div class="state">Loading events...</div>
+  } @else if (!events.length) {
+    <div class="state">No events available right now.</div>
+  } @else {
+    <div class="events-grid">
+      @for (event of events; track event.id) {
+        <article class="event-card">
+          <header>
+            <div>
+              <h2>{{ event.title }}</h2>
+              <small>{{ event.category }}</small>
+            </div>
+            <span class="status" [class]="event.status.toLowerCase()">
+              {{ event.status }}
+            </span>
+          </header>
+          <p class="description">{{ event.description }}</p>
+          <dl>
+            <div>
+              <dt>Date</dt>
+              <dd>{{ event.date | date: 'fullDate' }} - {{ event.date | date: 'shortTime' }}</dd>
+            </div>
+            <div>
+              <dt>Location</dt>
+              <dd>{{ event.location }}</dd>
+            </div>
+            <div>
+              <dt>Capacity</dt>
+              <dd>{{ event.capacity || 'Unlimited' }}</dd>
+            </div>
+          </dl>
+          <footer>
+            <button 
+              type="button" 
+              class="btn-primary"
+              [disabled]="registeringIds.has(event.id)"
+              (click)="register(event)">
+              @if (isRegistered(event.id)) {
+                {{ registeringIds.has(event.id) ? 'Leaving...' : 'Leave event' }}
+              } @else {
+                {{ registeringIds.has(event.id) ? 'Registering...' : 'Register' }}
+              }
+            </button>
+            @if (!authService.isAuthenticated) {
+              <small class="hint">Login to manage registrations</small>
+            } @else if (isRegistered(event.id)) {
+              <button type="button" class="link-button" (click)="openChat(event)">
+                Open event chat
+              </button>
+            }
+          </footer>
+        </article>
+      }
+    </div>
+  }
+</div>

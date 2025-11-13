@@ -1,0 +1,182 @@
+<div class="dashboard">
+  <section class="panel create-panel">
+    <h2>Create a new event</h2>
+    <p>Your events require admin approval before going public.</p>
+
+    @if (createSuccess) {
+      <div class="success-message">{{ createSuccess }}</div>
+    }
+    @if (createError) {
+      <div class="error-message">{{ createError }}</div>
+    }
+
+    <form (ngSubmit)="submitEvent()" #createForm="ngForm">
+      <div class="grid">
+        <label>
+          Title
+          <input
+            type="text"
+            name="title"
+            [(ngModel)]="createEventData.title"
+            required
+            placeholder="Community meetup">
+        </label>
+        <label>
+          Category
+          <input
+            type="text"
+            name="category"
+            [(ngModel)]="createEventData.category"
+            required
+            placeholder="Tech">
+        </label>
+      </div>
+      <label>
+        Description
+        <textarea
+          name="description"
+          rows="3"
+          [(ngModel)]="createEventData.description"
+          required
+          placeholder="Describe the agenda, speakers, and value.">
+        </textarea>
+      </label>
+      <div class="grid">
+        <label>
+          Location
+          <input
+            type="text"
+            name="location"
+            [(ngModel)]="createEventData.location"
+            required
+            placeholder="Rome, Italy">
+        </label>
+        <label>
+          Date & Time
+          <input
+            type="datetime-local"
+            name="dateLocal"
+            [(ngModel)]="createEventData.dateLocal"
+            required>
+        </label>
+      </div>
+      <div class="grid">
+        <label>
+          Capacity (optional)
+          <input
+            type="number"
+            min="1"
+            name="capacity"
+            [(ngModel)]="createEventData.capacity"
+            placeholder="100">
+        </label>
+        <label>
+          Cover image URL (optional)
+          <input
+            type="url"
+            name="image_url"
+            [(ngModel)]="createEventData.image_url"
+            placeholder="https://...">
+        </label>
+      </div>
+      <button 
+        type="submit"
+        class="btn-primary"
+        [disabled]="createLoading || !createForm.valid">
+        {{ createLoading ? 'Saving...' : 'Submit for approval' }}
+      </button>
+    </form>
+  </section>
+
+  <section class="panel">
+    <header>
+      <div>
+        <h2>My events</h2>
+        <p>Track approval status, participants and manage events.</p>
+      </div>
+      <button type="button" class="link-button" (click)="loadMyEvents()">Refresh</button>
+    </header>
+    @if (myEventsLoading) {
+      <div class="state">Loading your events...</div>
+    } @else if (myEventsError) {
+      <div class="error-message">{{ myEventsError }}</div>
+    } @else if (!myEvents.length) {
+      <div class="state">You have not created any events yet.</div>
+    } @else {
+      <div class="list">
+        @for (event of myEvents; track event.id) {
+          <article>
+            <div>
+              <h3>{{ event.title }}</h3>
+              <p>{{ event.date | date: 'medium' }} • {{ event.location }}</p>
+              <span class="status" [class]="event.status.toLowerCase()">
+                {{ event.status }}
+              </span>
+            </div>
+            <div class="actions">
+              <button type="button" class="link-button" (click)="toggleParticipants(event)">
+                @if (participants[event.id]) { Hide participants } @else { View participants }
+              </button>
+              <button type="button" class="danger" (click)="deleteEvent(event)">
+                Delete
+              </button>
+              <button type="button" class="link-button" (click)="openChat(event.id)">
+                Open chat
+              </button>
+            </div>
+            @if (participants[event.id]) {
+              <ul class="participants">
+                @if (participantLoading.has(event.id)) {
+                  <li>Loading...</li>
+                } @else if (!participants[event.id].length) {
+                  <li>No participants yet.</li>
+                } @else {
+                  @for (participant of participants[event.id]; track participant.id) {
+                    <li>
+                      <strong>{{ participant.username }}</strong>
+                      <span>{{ participant.email }}</span>
+                    </li>
+                  }
+                }
+              </ul>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="panel">
+    <header>
+      <div>
+        <h2>My registrations</h2>
+        <p>Events you have registered for.</p>
+      </div>
+      <button type="button" class="link-button" (click)="loadRegistrations()">Refresh</button>
+    </header>
+    @if (registrationsLoading) {
+      <div class="state">Loading your registrations...</div>
+    } @else if (registrationsError) {
+      <div class="error-message">{{ registrationsError }}</div>
+    } @else if (!myRegistrations.length) {
+      <div class="state">No registrations yet.</div>
+    } @else {
+      <div class="list">
+        @for (registration of myRegistrations; track registration.event_id) {
+          <article>
+            <div>
+              <h3>{{ registration.event?.title }}</h3>
+              <p>{{ registration.event?.date | date: 'longDate' }} • {{ registration.event?.location }}</p>
+            </div>
+            <small>Registered on {{ registration.registered_at | date: 'medium' }}</small>
+            @if (registration.event?.id) {
+              <button type="button" class="link-button" (click)="openChat(registration.event!.id)">
+                Open chat
+              </button>
+            }
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>

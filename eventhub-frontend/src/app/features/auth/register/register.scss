@@ -83,6 +83,16 @@
     .field-success {
       color: #38a169;
     }
+
+    .requirements {
+      padding-left: 1.2rem;
+      margin: 0.5rem 0 0;
+      color: #718096;
+      font-size: 13px;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
   }
 
   .error-message {

@@ -1,0 +1,106 @@
+<div class="chat-layout">
+  <aside class="sidebar">
+    <header>
+      <h2>Conversations</h2>
+      <input
+        type="text"
+        placeholder="Search..."
+        [(ngModel)]="searchTerm"
+        (ngModelChange)="onSearchChange()"
+      >
+    </header>
+
+    @if (conversationsLoading) {
+      <div class="state">Loading...</div>
+    } @else if (conversationsError) {
+      <div class="error-message">{{ conversationsError }}</div>
+    } @else if (!filteredConversations.length) {
+      <div class="state">No conversations yet.</div>
+    } @else {
+      <ul class="conversation-list">
+        @for (conversation of filteredConversations; track conversation._id) {
+          <li
+            [class.active]="selectedConversation?._id === conversation._id"
+            (click)="selectConversation(conversation)"
+          >
+            <div class="title-row">
+              <h3>{{ conversation.displayName || 'Conversation' }}</h3>
+              <small>{{ conversation.lastMessage?.timestamp | date:'shortTime' }}</small>
+            </div>
+            <p>{{ conversation.lastMessage?.content || 'No messages yet' }}</p>
+            <div class="meta">
+              @if (conversation.unreadCount) {
+                <span class="pill">{{ conversation.unreadCount }}</span>
+              }
+              <span class="type">{{ conversation.type }}</span>
+            </div>
+            @if (typingSummary(conversation._id)) {
+              <small class="typing">{{ typingSummary(conversation._id) }}</small>
+            }
+          </li>
+        }
+      </ul>
+    }
+  </aside>
+
+  <section class="chat-panel" *ngIf="selectedConversation as activeConversation; else placeholder">
+    <header>
+      <div>
+        <h2>{{ activeConversation.displayName }}</h2>
+        <p>
+          {{ activeConversation.participantsInfo?.length || 0 }} participants
+        </p>
+      </div>
+      <div class="actions">
+        <button class="link" (click)="loadMessages(activeConversation)">
+          Refresh
+        </button>
+      </div>
+    </header>
+
+    <div class="messages" #messageList>
+      @if (hasMoreMessages) {
+        <button class="link load-more" (click)="loadOlderMessages()">
+          Load previous messages
+        </button>
+      }
+
+      @if (messagesLoading && !messages.length) {
+        <div class="state">Loading messages...</div>
+      } @else if (messagesError) {
+        <div class="error-message">{{ messagesError }}</div>
+      } @else if (!messages.length) {
+        <div class="state">Start the conversation!</div>
+      } @else {
+        <div class="message"
+             *ngFor="let message of messages; trackBy: trackByMessage"
+             [class.me]="isOwnMessage(message)">
+          <div class="bubble">
+            <div class="meta">
+              <span class="author">{{ message.sender?.username || 'Unknown' }}</span>
+              <span class="time">{{ message.createdAt | date:'shortTime' }}</span>
+            </div>
+            <p>{{ message.content }}</p>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="composer">
+      <textarea
+        [(ngModel)]="messageContent"
+        (ngModelChange)="onMessageInputChange()"
+        placeholder="Write a message..."
+      ></textarea>
+      <button class="btn-primary" (click)="sendMessage()" [disabled]="!messageContent.trim()">
+        Send
+      </button>
+    </div>
+  </section>
+
+  <ng-template #placeholder>
+    <section class="chat-panel placeholder">
+      <p>Select a conversation to start chatting.</p>
+    </section>
+  </ng-template>
+</div>

@@ -40,6 +40,65 @@
       </button>
     </form>
 
+    <button type="button" class="link-button" (click)="toggleForgotPassword()">
+      {{ forgotPasswordOpen ? 'Hide password reset' : 'Forgot password?' }}
+    </button>
+
+    @if (forgotPasswordOpen) {
+      <div class="panel">
+        <h3>Password reset</h3>
+        <p>Enter your account email to receive a reset link.</p>
+        <label for="resetEmail">Email</label>
+        <input 
+          type="email"
+          id="resetEmail"
+          name="resetEmail"
+          [(ngModel)]="passwordResetEmail"
+          placeholder="your@email.com"
+          [disabled]="passwordResetLoading">
+        @if (passwordResetError) {
+          <small class="field-error">{{ passwordResetError }}</small>
+        }
+        @if (passwordResetMessage) {
+          <small class="field-success">{{ passwordResetMessage }}</small>
+        }
+        <button 
+          type="button" 
+          class="btn-secondary" 
+          (click)="requestPasswordReset()"
+          [disabled]="passwordResetLoading">
+          {{ passwordResetLoading ? 'Sending...' : 'Send reset email' }}
+        </button>
+      </div>
+    }
+
+    <div class="panel">
+      <h3>Need verification email again?</h3>
+      <div class="form-group compact">
+        <label for="resendEmail">Email</label>
+        <input
+          type="email"
+          id="resendEmail"
+          name="resendEmail"
+          [(ngModel)]="resendEmail"
+          placeholder="your@email.com"
+          [disabled]="resendLoading">
+      </div>
+      @if (resendError) {
+        <small class="field-error">{{ resendError }}</small>
+      }
+      @if (resendMessage) {
+        <small class="field-success">{{ resendMessage }}</small>
+      }
+      <button 
+        type="button" 
+        class="btn-secondary" 
+        (click)="resendVerificationEmail()"
+        [disabled]="resendLoading">
+        {{ resendLoading ? 'Sending...' : 'Resend verification email' }}
+      </button>
+    </div>
+
     <div class="register-link">
       <p>Don't have an account? <a routerLink="/register">Register here</a></p>
     </div>

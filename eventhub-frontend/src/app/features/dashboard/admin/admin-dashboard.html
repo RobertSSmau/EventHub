@@ -1,0 +1,119 @@
+<div class="dashboard">
+  <section class="panel">
+    <header>
+      <div>
+        <h2>Pending events</h2>
+        <p>Approve or reject submissions pending moderation.</p>
+      </div>
+      <button type="button" class="link-button" (click)="loadPendingEvents()">Refresh</button>
+    </header>
+
+    @if (eventsLoading) {
+      <div class="state">Loading pending events...</div>
+    } @else if (eventsError) {
+      <div class="error-message">{{ eventsError }}</div>
+    } @else if (!pendingEvents.length) {
+      <div class="state">Nothing to review right now 🎉</div>
+    } @else {
+      <div class="list">
+        @for (event of pendingEvents; track event.id) {
+          <article>
+            <div>
+              <h3>{{ event.title }}</h3>
+              <p>{{ event.date | date: 'fullDate' }} • {{ event.location }}</p>
+              <small>Created on {{ event.created_at | date: 'medium' }}</small>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn-secondary" (click)="reject(event)">Reject</button>
+              <button type="button" class="btn-primary" (click)="approve(event)">Approve</button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="panel">
+    <header>
+      <div>
+        <h2>Reports</h2>
+        <p>Investigate user or event reports.</p>
+      </div>
+      <button type="button" class="link-button" (click)="loadReports()">Refresh</button>
+    </header>
+
+    @if (reportsLoading) {
+      <div class="state">Loading reports...</div>
+    } @else if (reportsError) {
+      <div class="error-message">{{ reportsError }}</div>
+    } @else if (!reports.length) {
+      <div class="state">No reports submitted.</div>
+    } @else {
+      <div class="list">
+        @for (report of reports; track report.id) {
+          <article>
+            <div class="report-header">
+              <div>
+                <h3>Report #{{ report.id }}</h3>
+                <p>{{ report.reason }}</p>
+                <small>
+                  Submitted {{ report.created_at | date: 'medium' }} by {{ report.reporter?.username || 'Unknown' }}
+                </small>
+              </div>
+              <button type="button" class="danger" (click)="deleteReport(report)">Delete</button>
+            </div>
+            <div class="report-body">
+              <p>{{ report.description || 'No additional description' }}</p>
+              <div class="controls">
+                <label>
+                  Status
+                  <select [(ngModel)]="reportDraftStatus[report.id]" (change)="updateReportStatus(report)">
+                    @for (status of reportStatusOptions; track status) {
+                      <option [ngValue]="status">{{ status }}</option>
+                    }
+                  </select>
+                </label>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
+
+  <section class="panel">
+    <header>
+      <div>
+        <h2>Users</h2>
+        <p>Block/Unblock accounts that violate policies.</p>
+      </div>
+      <button type="button" class="link-button" (click)="loadUsers()">Refresh</button>
+    </header>
+
+    @if (usersLoading) {
+      <div class="state">Loading users...</div>
+    } @else if (usersError) {
+      <div class="error-message">{{ usersError }}</div>
+    } @else if (!users.length) {
+      <div class="state">No users found.</div>
+    } @else {
+      <div class="list">
+        @for (user of users; track user.id) {
+          <article class="user">
+            <div>
+              <h3>{{ user.username }}</h3>
+              <p>{{ user.email }}</p>
+              <small>Role: {{ user.role }}</small>
+            </div>
+            <button 
+              type="button" 
+              class="btn-secondary" 
+              (click)="toggleUserBlock(user)">
+              {{ user.is_blocked ? 'Unblock' : 'Block' }}
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
+</div>

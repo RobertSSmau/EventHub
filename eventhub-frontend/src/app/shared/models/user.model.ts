@@ -3,10 +3,10 @@ export interface User {
   username: string;
   email: string;
   role: 'USER' | 'ADMIN';
-  emailVerified: boolean;
-  blocked: boolean;
-  createdAt: string;
-  updatedAt: string;
+  email_verified?: boolean;
+  is_blocked?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface LoginRequest {
@@ -23,4 +23,5 @@ export interface RegisterRequest {
 export interface AuthResponse {
   token: string;
   user: User;
+  message?: string;
 }

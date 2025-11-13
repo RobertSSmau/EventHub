@@ -10,7 +10,7 @@
           <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
         <h2>Registration Successful!</h2>
-        <p>Redirecting to events...</p>
+        <p>Redirecting to your dashboard...</p>
       </div>
     } @else {
       <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
@@ -48,11 +48,18 @@
             name="password"
             [(ngModel)]="credentials.password" 
             required
-            minlength="6"
-            placeholder="At least 6 characters"
+            minlength="8"
+            placeholder="At least 8 characters, mix of cases, numbers & symbol"
             [disabled]="loading">
-          @if (credentials.password && credentials.password.length < 6) {
-            <small class="field-error">Password must be at least 6 characters</small>
+          @if (credentials.password && credentials.password.length < 8) {
+            <small class="field-error">Password must be at least 8 characters</small>
+          }
+          @if (passwordRequirements.length) {
+            <ul class="requirements">
+              @for (rule of passwordRequirements; track rule) {
+                <li>{{ rule }}</li>
+              }
+            </ul>
           }
         </div>
 

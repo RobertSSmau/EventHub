@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -11,7 +11,7 @@ import { RegisterRequest } from '../../../shared/models/user.model';
   templateUrl: './register.html',
   styleUrl: './register.scss'
 })
-export class Register {
+export class Register implements OnInit {
   credentials: RegisterRequest = {
     username: '',
     email: '',
@@ -21,11 +21,31 @@ export class Register {
   error: string = '';
   loading: boolean = false;
   success: boolean = false;
+  passwordRequirements: string[] = [];
+  passwordPattern = '';
 
   constructor(
     private authService: AuthService,
     private router: Router
   ) {}
+
+  ngOnInit(): void {
+    this.authService.getPasswordRequirements().subscribe({
+      next: (res) => {
+        this.passwordRequirements = res.requirements;
+        this.passwordPattern = res.pattern;
+      },
+      error: () => {
+        this.passwordRequirements = [
+          'At least 8 characters',
+          'One uppercase letter',
+          'One lowercase letter',
+          'One number',
+          'One special character',
+        ];
+      }
+    });
+  }
 
   get passwordsMatch(): boolean {
     return this.credentials.password === this.confirmPassword;
@@ -38,7 +58,7 @@ export class Register {
       this.credentials.password &&
       this.confirmPassword &&
       this.passwordsMatch &&
-      this.credentials.password.length >= 6
+      this.credentials.password.length >= 8
     );
   }
 
@@ -48,8 +68,8 @@ export class Register {
       return;
     }
 
-    if (this.credentials.password.length < 6) {
-      this.error = 'Password must be at least 6 characters';
+    if (this.credentials.password.length < 8) {
+      this.error = 'Password must be at least 8 characters';
       return;
     }
 
@@ -60,7 +80,7 @@ export class Register {
       next: () => {
         this.success = true;
         setTimeout(() => {
-          this.router.navigate(['/events']);
+          this.router.navigate(['/dashboard']);
         }, 1500);
       },
       error: (err) => {
