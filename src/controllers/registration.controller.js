@@ -120,7 +120,7 @@ export async function getMyRegistrations(req, res) {
     include: {
       model: Event,
       as: 'event',
-      attributes: ['id', 'title', 'category', 'location', 'date'],
+      attributes: ['id', 'title', 'category', 'location', 'date', 'description', 'image_url'],
     },
     order: [['registered_at', 'DESC']],
   });

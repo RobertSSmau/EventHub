@@ -15,8 +15,7 @@ import { CreateReportRequest } from '../../shared/models/report.model';
   selector: 'app-chat-page',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './chat-page.html',
-  styleUrl: './chat-page.scss',
+  templateUrl: './chat-page.html'
 })
 export class ChatPage implements OnInit, OnDestroy {
   @ViewChild('messageList') messageList?: ElementRef<HTMLDivElement>;
@@ -46,6 +45,8 @@ export class ChatPage implements OnInit, OnDestroy {
   currentUserId: number | null = null;
   userSearchTerm = '';
   showUserDropdown = false;
+
+  isMobileMenuOpen = false;
 
   private subs: Subscription[] = [];
   private activeTypingTimeout?: any;
@@ -172,6 +173,8 @@ export class ChatPage implements OnInit, OnDestroy {
     this.socketService.joinConversation(conversation._id);
     this.loadMessages(conversation);
     this.clearTyping(conversation._id);
+    // Chiudi il menu mobile quando si seleziona una conversazione
+    this.isMobileMenuOpen = false;
     this.markConversationAsRead(conversation);
   }
 
@@ -376,6 +379,10 @@ export class ChatPage implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 
   openReportModal(conversation: Conversation): void {
