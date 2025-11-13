@@ -59,7 +59,15 @@
           <article>
             <div class="report-header">
               <div>
-                <h3>Report #{{ report.id }}</h3>
+                <h3>
+                  @if (report.reportedUser && report.currentReportPosition && report.activeReportsCount) {
+                    Report {{ report.currentReportPosition }}/{{ report.activeReportsCount }} - User: {{ report.reportedUser.username }}
+                  } @else if (report.reportedEvent && report.currentReportPosition && report.activeReportsCount) {
+                    Report {{ report.currentReportPosition }}/{{ report.activeReportsCount }} - Event: {{ report.reportedEvent.title }}
+                  } @else {
+                    Report #{{ report.id }}
+                  }
+                </h3>
                 <p>{{ report.reason }}</p>
                 <small>
                   Submitted {{ report.created_at | date: 'medium' }} by {{ report.reporter?.username || 'Unknown' }}

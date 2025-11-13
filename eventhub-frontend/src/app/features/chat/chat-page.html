@@ -128,17 +128,70 @@
         <div class="report-info">
           <h4>Select User to Report</h4>
           <p>Choose which user you want to report from this conversation:</p>
-          <div class="user-list">
-            <label class="user-option" *ngFor="let user of selectedConversation.participantsInfo">
+          
+          <!-- User selection dropdown with search -->
+          <div class="user-selector">
+            <div class="dropdown-container">
               <input
-                type="radio"
-                name="reportedUser"
-                [value]="user.id"
-                [(ngModel)]="selectedUserId"
-                *ngIf="user.id !== currentUserId">
-              <span>{{ user.username }}</span>
-            </label>
+                type="text"
+                class="user-search-input"
+                [(ngModel)]="userSearchTerm"
+                (input)="onUserSearchInput()"
+                (focus)="showUserDropdown = true"
+                placeholder="Search users..."
+                autocomplete="off">
+              
+              @if (selectedUserId) {
+                <div class="selected-user-display">
+                  <span class="selected-user-name">{{ selectedUserName }}</span>
+                  <button type="button" class="clear-selection" (click)="selectedUserId = null; userSearchTerm = ''">×</button>
+                </div>
+              }
+              
+              @if (showUserDropdown && filteredUsers.length > 0) {
+                <div class="user-dropdown">
+                  <div 
+                    class="user-option"
+                    *ngFor="let user of filteredUsers"
+                    (click)="selectUserToReport(user.id)">
+                    <span class="user-avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
+                    <span class="user-info">
+                      <span class="username">{{ user.username }}</span>
+                    </span>
+                  </div>
+                </div>
+              }
+              
+              @if (showUserDropdown && filteredUsers.length === 0 && userSearchTerm.trim()) {
+                <div class="user-dropdown">
+                  <div class="no-users">No users found</div>
+                </div>
+              }
+            </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Report target selection for event chats -->
+      <div *ngIf="selectedConversation?.type === 'event_group'" class="report-target-selection">
+        <h4>What do you want to report?</h4>
+        <div class="target-options">
+          <label class="target-option">
+            <input
+              type="radio"
+              name="reportTarget"
+              value="event"
+              [(ngModel)]="reportTarget">
+            <span>Report the Event</span>
+          </label>
+          <label class="target-option">
+            <input
+              type="radio"
+              name="reportTarget"
+              value="user"
+              [(ngModel)]="reportTarget">
+            <span>Report a User</span>
+          </label>
         </div>
       </div>
 

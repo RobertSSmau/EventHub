@@ -20,6 +20,10 @@ export async function createReport(req, res) {
   } catch (error) {
     console.error('Error creating report:', error);
     const status = error.message === 'Event not found' ? 404 :
+                   error.message === 'User not found' ? 404 :
+                   error.message === 'Must specify either reported_user_id or reported_event_id, not both' ? 400 :
+                   error.message === 'You have already reported this user and the report is still under review' ? 409 :
+                   error.message === 'You have already reported this event and the report is still under review' ? 409 :
                    error.message === 'You have already reported this event' ? 400 : 500;
     res.status(status).json({ message: error.message });
   }

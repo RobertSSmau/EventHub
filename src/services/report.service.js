@@ -29,16 +29,17 @@ export async function createReport(userId, reportData) {
       throw new Error('Event not found');
     }
 
-    // Check if user already reported this event
+    // Check if user already reported this event (only pending reports)
     existingReport = await Report.findOne({
       where: {
         reported_event_id: reported_event_id,
         reporter_id: userId,
+        status: 'PENDING',
       },
     });
 
     if (existingReport) {
-      throw new Error('You have already reported this event');
+      throw new Error('You have already reported this event and the report is still under review');
     }
   } else if (reported_user_id) {
     // Check if user exists
@@ -47,16 +48,17 @@ export async function createReport(userId, reportData) {
       throw new Error('User not found');
     }
 
-    // Check if user already reported this user
+    // Check if user already reported this user (only pending reports)
     existingReport = await Report.findOne({
       where: {
         reported_user_id: reported_user_id,
         reporter_id: userId,
+        status: 'PENDING',
       },
     });
 
     if (existingReport) {
-      throw new Error('You have already reported this user');
+      throw new Error('You have already reported this user and the report is still under review');
     }
   }
 
@@ -73,6 +75,7 @@ export async function createReport(userId, reportData) {
   const fullReport = await Report.findByPk(report.id, {
     include: [
       { model: User, as: 'reporter', attributes: ['id', 'username', 'email'] },
+      ...(reported_user_id ? [{ model: User, as: 'reportedUser', attributes: ['id', 'username'] }] : []),
       ...(reported_event_id ? [{ model: Event, as: 'reportedEvent', attributes: ['id', 'title', 'date', 'location'] }] : []),
     ],
   });
@@ -160,8 +163,64 @@ export async function getAllReports(filters = {}) {
     order: [['created_at', 'DESC']],
   });
 
+  // Add report count for each reported user/event
+  const reportsWithCount = await Promise.all(
+    rows.map(async (report) => {
+      let activeReportsCount = 0;
+      let currentReportPosition = 0;
+
+      if (report.reported_user_id) {
+        // Count active reports for this user
+        activeReportsCount = await Report.count({
+          where: {
+            reported_user_id: report.reported_user_id,
+            status: 'PENDING',
+          },
+        });
+
+        // Find position of current report among active reports
+        const activeReports = await Report.findAll({
+          where: {
+            reported_user_id: report.reported_user_id,
+            status: 'PENDING',
+          },
+          order: [['created_at', 'ASC']],
+          attributes: ['id'],
+        });
+
+        currentReportPosition = activeReports.findIndex(r => r.id === report.id) + 1;
+      } else if (report.reported_event_id) {
+        // Count active reports for this event
+        activeReportsCount = await Report.count({
+          where: {
+            reported_event_id: report.reported_event_id,
+            status: 'PENDING',
+          },
+        });
+
+        // Find position of current report among active reports
+        const activeReports = await Report.findAll({
+          where: {
+            reported_event_id: report.reported_event_id,
+            status: 'PENDING',
+          },
+          order: [['created_at', 'ASC']],
+          attributes: ['id'],
+        });
+
+        currentReportPosition = activeReports.findIndex(r => r.id === report.id) + 1;
+      }
+
+      return {
+        ...report.toJSON(),
+        activeReportsCount,
+        currentReportPosition,
+      };
+    })
+  );
+
   return {
-    reports: rows,
+    reports: reportsWithCount,
     total: count,
     limit: parseInt(limit),
     offset: parseInt(offset),

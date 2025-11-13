@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild, ElementRef, HostListener } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -8,6 +8,7 @@ import { SocketService, NewMessageEvent, TypingEvent, UserStatusEvent } from '..
 import { Conversation, Message, MessageType } from '../../shared/models/chat.model';
 import { AuthService } from '../../core/services/auth';
 import { ReportService } from '../../core/services/report.service';
+import { UserService } from '../../core/services/user.service';
 import { CreateReportRequest } from '../../shared/models/report.model';
 
 @Component({
@@ -43,6 +44,8 @@ export class ChatPage implements OnInit, OnDestroy {
   reportDescription = '';
   selectedUserId: number | null = null;
   currentUserId: number | null = null;
+  userSearchTerm = '';
+  showUserDropdown = false;
 
   private subs: Subscription[] = [];
   private activeTypingTimeout?: any;
@@ -53,8 +56,25 @@ export class ChatPage implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     private authService: AuthService,
-    private reportService: ReportService
+    private reportService: ReportService,
+    private userService: UserService
   ) {}
+
+  get filteredUsers() {
+    if (!this.selectedConversation?.participantsInfo) return [];
+    
+    const searchTerm = this.userSearchTerm.toLowerCase().trim();
+    return this.selectedConversation.participantsInfo
+      .filter(user => user.id !== this.currentUserId)
+      .filter(user => !searchTerm || user.username.toLowerCase().includes(searchTerm))
+      .sort((a, b) => a.username.localeCompare(b.username));
+  }
+
+  get selectedUserName(): string {
+    if (!this.selectedUserId || !this.selectedConversation?.participantsInfo) return '';
+    const user = this.selectedConversation.participantsInfo.find(u => u.id === this.selectedUserId);
+    return user?.username || '';
+  }
 
   ngOnInit(): void {
     this.currentUserId = this.authService.currentUser?.id || null;
@@ -360,7 +380,13 @@ export class ChatPage implements OnInit, OnDestroy {
 
   openReportModal(conversation: Conversation): void {
     this.showReportModal = true;
-    this.reportTarget = conversation.type === 'event_group' ? 'event' : 'user';
+    // For event group chats, let user choose between reporting event or user
+    // For direct chats, automatically set to user reporting
+    if (conversation.type === 'event_group') {
+      this.reportTarget = null; // Let user choose
+    } else {
+      this.reportTarget = 'user';
+    }
     this.reportReason = '';
     this.reportDescription = '';
     this.selectedUserId = null;
@@ -372,10 +398,33 @@ export class ChatPage implements OnInit, OnDestroy {
     this.reportReason = '';
     this.reportDescription = '';
     this.selectedUserId = null;
+    this.userSearchTerm = '';
+    this.showUserDropdown = false;
   }
 
   selectUserToReport(userId: number): void {
     this.selectedUserId = userId;
+    this.showUserDropdown = false;
+    this.userSearchTerm = this.selectedUserName;
+  }
+
+  toggleUserDropdown(): void {
+    this.showUserDropdown = !this.showUserDropdown;
+  }
+
+  onUserSearchInput(): void {
+    this.showUserDropdown = true;
+    if (!this.userSearchTerm.trim()) {
+      this.selectedUserId = null;
+    }
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.dropdown-container')) {
+      this.showUserDropdown = false;
+    }
   }
 
   submitReport(conversation: Conversation): void {
@@ -400,12 +449,27 @@ export class ChatPage implements OnInit, OnDestroy {
 
     this.reportService.createReport(reportData).subscribe({
       next: () => {
+        const targetInfo = this.reportTarget === 'user' && this.selectedUserName 
+          ? `user ${this.selectedUserName}` 
+          : 'the event';
+        console.log(`Report submitted successfully for ${targetInfo}`);
         this.closeReportModal();
         // Could show a success message here
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Failed to submit report:', err);
-        // Could show an error message here
+        let errorMessage = 'Failed to submit report. Please try again.';
+        
+        if (err.status === 409) {
+          errorMessage = err.error?.message || 'You have already reported this item and it is still under review.';
+        } else if (err.status === 400) {
+          errorMessage = err.error?.message || 'Invalid report data.';
+        } else if (err.status === 404) {
+          errorMessage = err.error?.message || 'The item you are trying to report was not found.';
+        }
+        
+        // Could show an error message to the user here
+        alert(errorMessage);
       }
     });
   }

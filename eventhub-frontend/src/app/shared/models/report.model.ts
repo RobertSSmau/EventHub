@@ -18,6 +18,8 @@ export interface Report {
   reporter?: Pick<User, 'id' | 'username' | 'email'>;
   reportedUser?: Pick<User, 'id' | 'username' | 'email'>;
   reportedEvent?: Pick<Event, 'id' | 'title' | 'date' | 'location'>;
+  activeReportsCount?: number;
+  currentReportPosition?: number;
 }
 
 export interface CreateReportRequest {
