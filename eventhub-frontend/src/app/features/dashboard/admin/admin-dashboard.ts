@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { EventService } from '../../../core/services/event.service';
 import { ReportService } from '../../../core/services/report.service';
 import { UserService } from '../../../core/services/user.service';
+import { AuthService } from '../../../core/services/auth';
 import { Event } from '../../../shared/models/event.model';
 import {
   Report,
@@ -11,6 +12,7 @@ import {
   ReportListResponse,
 } from '../../../shared/models/report.model';
 import { User } from '../../../shared/models/user.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -38,7 +40,9 @@ export class AdminDashboard implements OnInit {
   constructor(
     private eventService: EventService,
     private reportService: ReportService,
-    private userService: UserService
+    private userService: UserService,
+    private authService: AuthService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -133,6 +137,12 @@ export class AdminDashboard implements OnInit {
         user.is_blocked = !user.is_blocked;
       },
       error: () => (this.usersError = 'Unable to update user state'),
+    });
+  }
+
+  logout(): void {
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/login']);
     });
   }
 }

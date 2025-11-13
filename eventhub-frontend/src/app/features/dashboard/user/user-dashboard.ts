@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { EventService } from '../../../core/services/event.service';
 import { RegistrationService } from '../../../core/services/registration.service';
+import { AuthService } from '../../../core/services/auth';
 import {
   CreateEventRequest,
   Event,
@@ -43,6 +44,7 @@ export class UserDashboard implements OnInit {
   constructor(
     private eventService: EventService,
     private registrationService: RegistrationService,
+    private authService: AuthService,
     private router: Router
   ) {}
 
@@ -164,5 +166,11 @@ export class UserDashboard implements OnInit {
 
   openChat(eventId: number): void {
     this.router.navigate(['/chat'], { queryParams: { eventId } });
+  }
+
+  logout(): void {
+    this.authService.logout().subscribe(() => {
+      this.router.navigate(['/login']);
+    });
   }
 }
