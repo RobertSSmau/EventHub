@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { EventService } from '../../../core/services/event.service';
 import { RegistrationService } from '../../../core/services/registration.service';
 import { AuthService } from '../../../core/services/auth';
@@ -18,7 +20,7 @@ import { Router } from '@angular/router';
   imports: [CommonModule, FormsModule],
   templateUrl: './user-dashboard.html'
 })
-export class UserDashboard implements OnInit {
+export class UserDashboard implements OnInit, OnDestroy {
   myEvents: Event[] = [];
   myRegistrations: Registration[] = [];
   participants: Record<number, EventParticipant[]> = {};
@@ -45,6 +47,9 @@ export class UserDashboard implements OnInit {
   availableEventsLoading = false;
   availableEventsError = '';
   searchQuery = '';
+  searchType: 'title' | 'category' | 'location' | 'dateRange' = 'title';
+  dateFrom = '';
+  dateTo = '';
   selectedCategory = '';
   selectedStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | '' = '';
   categories: string[] = ['Tech', 'Business', 'Art', 'Sports', 'Education', 'Other'];
@@ -52,6 +57,10 @@ export class UserDashboard implements OnInit {
   activeSection: 'create' | 'my-events' | 'registrations' | 'browse' = 'my-events';
 
   isMobileMenuOpen = false;
+
+  private searchSubject = new Subject<string>();
+  private destroy$ = new Subject<void>();
+  private subs: Subscription[] = [];
 
   constructor(
     private eventService: EventService,
@@ -64,6 +73,19 @@ export class UserDashboard implements OnInit {
     this.loadMyEvents();
     this.loadRegistrations();
     this.loadAvailableEvents();
+
+    // Configure search debounce
+    this.subs.push(
+      this.searchSubject
+        .pipe(
+          debounceTime(300),
+          distinctUntilChanged(),
+          takeUntil(this.destroy$)
+        )
+        .subscribe(searchTerm => {
+          this.performSearch(searchTerm);
+        })
+    );
   }
 
   loadMyEvents(): void {
@@ -104,8 +126,26 @@ export class UserDashboard implements OnInit {
     
     const filters: any = {};
     if (this.selectedStatus) filters.status = this.selectedStatus;
-    if (this.searchQuery.trim()) filters.search = this.searchQuery.trim();
     if (this.selectedCategory) filters.category = this.selectedCategory;
+    
+    // Aggiungi filtri di ricerca basati sul tipo selezionato
+    if (this.searchQuery.trim()) {
+      switch (this.searchType) {
+        case 'title':
+          filters.title = this.searchQuery.trim();
+          break;
+        case 'category':
+          filters.category = this.searchQuery.trim();
+          break;
+        case 'location':
+          filters.location = this.searchQuery.trim();
+          break;
+      }
+    }
+    
+    // Filtro per intervallo di date
+    if (this.dateFrom) filters.dateFrom = this.dateFrom;
+    if (this.dateTo) filters.dateTo = this.dateTo;
     
     this.eventService.getEvents(filters).subscribe({
       next: (events) => {
@@ -121,10 +161,24 @@ export class UserDashboard implements OnInit {
   }
 
   onSearch(): void {
+    this.searchSubject.next(this.searchQuery);
+  }
+
+  private performSearch(searchTerm: string): void {
     this.loadAvailableEvents();
   }
 
   onFilterChange(): void {
+    this.loadAvailableEvents();
+  }
+
+  onSearchTypeChange(): void {
+    // Resetta la query di ricerca quando si cambia tipo
+    this.searchQuery = '';
+    this.loadAvailableEvents();
+  }
+
+  onDateRangeChange(): void {
     this.loadAvailableEvents();
   }
 
@@ -242,5 +296,11 @@ export class UserDashboard implements OnInit {
     this.authService.logout().subscribe(() => {
       this.router.navigate(['/login']);
     });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.subs.forEach(sub => sub.unsubscribe());
   }
 }

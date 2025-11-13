@@ -332,14 +332,46 @@
           <div class="card-body">
             <!-- Filtri e ricerca -->
             <div class="row g-3 mb-4 p-3 bg-light rounded">
-              <div class="col-md-6">
-                <input
-                  type="text"
-                  class="form-control"
-                  [(ngModel)]="searchQuery"
-                  (input)="onSearch()"
-                  placeholder="Search events...">
+              <!-- Tipo di ricerca -->
+              <div class="col-md-3">
+                <select class="form-select" [(ngModel)]="searchType" (change)="onSearchTypeChange()">
+                  <option value="title">Search by Title</option>
+                  <option value="category">Search by Category</option>
+                  <option value="location">Search by Location</option>
+                  <option value="dateRange">Date Range</option>
+                </select>
               </div>
+
+              <!-- Campo ricerca o date range -->
+              @if (searchType !== 'dateRange') {
+                <div class="col-md-6">
+                  <input
+                    type="text"
+                    class="form-control"
+                    [(ngModel)]="searchQuery"
+                    (input)="onSearch()"
+                    [placeholder]="'Search ' + searchType + '...'">
+                </div>
+              } @else {
+                <div class="col-md-3">
+                  <label class="form-label small">From Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    [(ngModel)]="dateFrom"
+                    (change)="onDateRangeChange()">
+                </div>
+                <div class="col-md-3">
+                  <label class="form-label small">To Date</label>
+                  <input
+                    type="date"
+                    class="form-control"
+                    [(ngModel)]="dateTo"
+                    (change)="onDateRangeChange()">
+                </div>
+              }
+
+              <!-- Filtri esistenti -->
               <div class="col-md-3">
                 <select class="form-select" [(ngModel)]="selectedCategory" (change)="onFilterChange()">
                   <option value="">All categories</option>

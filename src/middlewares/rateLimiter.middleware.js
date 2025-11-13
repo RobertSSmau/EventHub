@@ -26,10 +26,10 @@ export const generalLimiter = rateLimit({
   store: createRedisStore('rl:general:'),
 });
 
-// Strict limiter for auth endpoints (5 requests per 15 minutes)
+// Strict limiter for auth endpoints (15 requests per 15 minutes)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 15,
   message: 'Too many authentication attempts, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -77,6 +77,16 @@ export const registrationLimiter = rateLimit({
   },
   skip: (req) => !req.user?.id,
   store: createRedisStore('rl:registration:'),
+});
+
+// Logout limiter (30 requests per hour - less restrictive than login)
+export const logoutLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 30,
+  message: 'Too many logout attempts, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
+  store: createRedisStore('rl:logout:'),
 });
 
 // Email sending limiter (3 emails per hour)

@@ -24,20 +24,31 @@ export async function createEvent(userId, eventData) {
  * Get all events with filters and pagination
  */
 export async function getAllEvents(filters = {}) {
-  const { category, location, date, status = 'APPROVED', limit = 10, offset = 0 } = filters;
+  const { category, location, title, dateFrom, dateTo, status = 'APPROVED', limit = 10, offset = 0 } = filters;
 
   const where = { status };
 
   if (category) {
-    where.category = { [Op.iLike]: category };
+    where.category = { [Op.iLike]: `%${category}%` };
   }
 
   if (location) {
-    where.location = { [Op.iLike]: location };
+    where.location = { [Op.iLike]: `%${location}%` };
   }
 
-  if (date) {
-    where.date = date;
+  if (title) {
+    where.title = { [Op.iLike]: `%${title}%` };
+  }
+
+  // Filtro per intervallo di date
+  if (dateFrom || dateTo) {
+    where.date = {};
+    if (dateFrom) {
+      where.date[Op.gte] = new Date(dateFrom);
+    }
+    if (dateTo) {
+      where.date[Op.lte] = new Date(dateTo);
+    }
   }
 
   const { count, rows } = await Event.findAndCountAll({

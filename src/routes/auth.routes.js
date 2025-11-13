@@ -18,7 +18,7 @@ import {
 } from '../controllers/auth.controller.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import { PASSWORD_REGEX, VALIDATION_MESSAGES } from '../utils/validation.js';
-import { authLimiter, emailLimiter } from '../middlewares/rateLimiter.middleware.js';
+import { authLimiter, logoutLimiter, emailLimiter } from '../middlewares/rateLimiter.middleware.js';
 
 const router = Router();
 
@@ -152,7 +152,7 @@ router.post(
  *       401:
  *         description: No token provided or invalid token
  */
-router.post('/logout', verifyToken, logout);
+router.post('/logout', logoutLimiter, verifyToken, logout);
 
 /**
  * @openapi
@@ -310,6 +310,54 @@ router.post(
   }),
   resetPassword
 );
+
+/**
+ * @openapi
+ * /auth/reset-rate-limits:
+ *   post:
+ *     summary: Reset all rate limiter counters (temporary endpoint for testing)
+ *     tags: [Auth]
+ *     responses:
+ *       200:
+ *         description: Rate limits reset successfully
+ *       500:
+ *         description: Failed to reset rate limits
+ */
+router.post('/reset-rate-limits', async (req, res) => {
+  try {
+    const { getRedisClient } = await import('../config/redis.js');
+    const redis = getRedisClient();
+
+    if (!redis) {
+      return res.status(500).json({ error: 'Redis client not available' });
+    }
+
+    // Get all keys that start with 'rl:'
+    const keys = await redis.keys('rl:*');
+
+    if (keys.length === 0) {
+      return res.json({
+        message: 'No rate limiter keys found',
+        deleted: 0
+      });
+    }
+
+    // Delete all rate limiter keys
+    const deletedCount = await redis.del(...keys);
+
+    res.json({
+      message: 'Rate limits reset successfully',
+      deleted: deletedCount,
+      keys: keys
+    });
+  } catch (error) {
+    console.error('Error resetting rate limits:', error);
+    res.status(500).json({
+      error: 'Failed to reset rate limits',
+      details: error.message
+    });
+  }
+});
 
 router.use(errors());
 
