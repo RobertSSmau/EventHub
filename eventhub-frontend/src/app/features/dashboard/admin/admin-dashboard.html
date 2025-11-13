@@ -1,132 +1,133 @@
-<div class="dashboard">
-  <header class="dashboard-header">
-    <h1>Admin Dashboard</h1>
-    <button type="button" class="logout-btn" (click)="logout()">Logout</button>
-  </header>
+<div class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h2 mb-0">Admin Dashboard</h1>
+    <button type="button" class="btn btn-outline-danger" (click)="logout()">Logout</button>
+  </div>
 
-  <section class="panel">
-    <header>
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
       <div>
-        <h2>Pending events</h2>
-        <p>Approve or reject submissions pending moderation.</p>
+        <h2 class="h5 mb-1">Pending events</h2>
+        <p class="text-muted mb-0 small">Approve or reject submissions pending moderation.</p>
       </div>
-      <button type="button" class="link-button" (click)="loadPendingEvents()">Refresh</button>
-    </header>
-
-    @if (eventsLoading) {
-      <div class="state">Loading pending events...</div>
-    } @else if (eventsError) {
-      <div class="error-message">{{ eventsError }}</div>
-    } @else if (!pendingEvents.length) {
-      <div class="state">Nothing to review right now 🎉</div>
-    } @else {
-      <div class="list">
-        @for (event of pendingEvents; track event.id) {
-          <article>
-            <div>
-              <h3>{{ event.title }}</h3>
-              <p>{{ event.date | date: 'fullDate' }} • {{ event.location }}</p>
-              <small>Created on {{ event.created_at | date: 'medium' }}</small>
-            </div>
-            <div class="actions">
-              <button type="button" class="btn-secondary" (click)="reject(event)">Reject</button>
-              <button type="button" class="btn-primary" (click)="approve(event)">Approve</button>
-            </div>
-          </article>
-        }
-      </div>
-    }
-  </section>
-
-  <section class="panel">
-    <header>
-      <div>
-        <h2>Reports</h2>
-        <p>Investigate user or event reports.</p>
-      </div>
-      <button type="button" class="link-button" (click)="loadReports()">Refresh</button>
-    </header>
-
-    @if (reportsLoading) {
-      <div class="state">Loading reports...</div>
-    } @else if (reportsError) {
-      <div class="error-message">{{ reportsError }}</div>
-    } @else if (!reports.length) {
-      <div class="state">No reports submitted.</div>
-    } @else {
-      <div class="list">
-        @for (report of reports; track report.id) {
-          <article>
-            <div class="report-header">
+      <button type="button" class="btn btn-outline-primary btn-sm" (click)="loadPendingEvents()">Refresh</button>
+    </div>
+    <div class="card-body">
+      @if (eventsLoading) {
+        <div class="text-center text-muted">Loading pending events...</div>
+      } @else if (eventsError) {
+        <div class="alert alert-danger">{{ eventsError }}</div>
+      } @else if (!pendingEvents.length) {
+        <div class="text-center text-muted">Nothing to review right now 🎉</div>
+      } @else {
+        <div class="list-group list-group-flush">
+          @for (event of pendingEvents; track event.id) {
+            <div class="list-group-item d-flex justify-content-between align-items-center">
               <div>
-                <h3>
-                  @if (report.reportedUser && report.currentReportPosition && report.activeReportsCount) {
-                    Report {{ report.currentReportPosition }}/{{ report.activeReportsCount }} - User: {{ report.reportedUser.username }}
-                  } @else if (report.reportedEvent && report.currentReportPosition && report.activeReportsCount) {
-                    Report {{ report.currentReportPosition }}/{{ report.activeReportsCount }} - Event: {{ report.reportedEvent.title }}
-                  } @else {
-                    Report #{{ report.id }}
-                  }
-                </h3>
-                <p>{{ report.reason }}</p>
-                <small>
-                  Submitted {{ report.created_at | date: 'medium' }} by {{ report.reporter?.username || 'Unknown' }}
-                </small>
+                <h5 class="mb-1">{{ event.title }}</h5>
+                <p class="mb-1">{{ event.date | date: 'fullDate' }} • {{ event.location }}</p>
+                <small class="text-muted">Created on {{ event.created_at | date: 'medium' }}</small>
               </div>
-              <button type="button" class="danger" (click)="deleteReport(report)">Delete</button>
+              <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary btn-sm" (click)="reject(event)">Reject</button>
+                <button type="button" class="btn btn-success btn-sm" (click)="approve(event)">Approve</button>
+              </div>
             </div>
-            <div class="report-body">
-              <p>{{ report.description || 'No additional description' }}</p>
-              <div class="controls">
-                <label>
-                  Status
-                  <select [(ngModel)]="reportDraftStatus[report.id]" (change)="updateReportStatus(report)">
+          }
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <div>
+        <h2 class="h5 mb-1">Reports</h2>
+        <p class="text-muted mb-0 small">Investigate user or event reports.</p>
+      </div>
+      <button type="button" class="btn btn-outline-primary btn-sm" (click)="loadReports()">Refresh</button>
+    </div>
+    <div class="card-body">
+      @if (reportsLoading) {
+        <div class="text-center text-muted">Loading reports...</div>
+      } @else if (reportsError) {
+        <div class="alert alert-danger">{{ reportsError }}</div>
+      } @else if (!reports.length) {
+        <div class="text-center text-muted">No reports submitted.</div>
+      } @else {
+        <div class="list-group list-group-flush">
+          @for (report of reports; track report.id) {
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                  <h5 class="mb-1">
+                    @if (report.reportedUser && report.currentReportPosition && report.activeReportsCount) {
+                      Report {{ report.currentReportPosition }}/{{ report.activeReportsCount }} - User: {{ report.reportedUser.username }}
+                    } @else if (report.reportedEvent && report.currentReportPosition && report.activeReportsCount) {
+                      Report {{ report.currentReportPosition }}/{{ report.activeReportsCount }} - Event: {{ report.reportedEvent.title }}
+                    } @else {
+                      Report #{{ report.id }}
+                    }
+                  </h5>
+                  <p class="mb-1">{{ report.reason }}</p>
+                  <small class="text-muted">
+                    Submitted {{ report.created_at | date: 'medium' }} by {{ report.reporter?.username || 'Unknown' }}
+                  </small>
+                </div>
+                <button type="button" class="btn btn-outline-danger btn-sm" (click)="deleteReport(report)">Delete</button>
+              </div>
+              <p class="mb-2">{{ report.description || 'No additional description' }}</p>
+              <div class="row">
+                <div class="col-md-4">
+                  <label class="form-label small">Status</label>
+                  <select class="form-select form-select-sm" [(ngModel)]="reportDraftStatus[report.id]" (change)="updateReportStatus(report)">
                     @for (status of reportStatusOptions; track status) {
                       <option [ngValue]="status">{{ status }}</option>
                     }
                   </select>
-                </label>
+                </div>
               </div>
             </div>
-          </article>
-        }
-      </div>
-    }
-  </section>
+          }
+        </div>
+      }
+    </div>
+  </div>
 
-  <section class="panel">
-    <header>
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
       <div>
-        <h2>Users</h2>
-        <p>Block/Unblock accounts that violate policies.</p>
+        <h2 class="h5 mb-1">Users</h2>
+        <p class="text-muted mb-0 small">Block/Unblock accounts that violate policies.</p>
       </div>
-      <button type="button" class="link-button" (click)="loadUsers()">Refresh</button>
-    </header>
-
-    @if (usersLoading) {
-      <div class="state">Loading users...</div>
-    } @else if (usersError) {
-      <div class="error-message">{{ usersError }}</div>
-    } @else if (!users.length) {
-      <div class="state">No users found.</div>
-    } @else {
-      <div class="list">
-        @for (user of users; track user.id) {
-          <article class="user">
-            <div>
-              <h3>{{ user.username }}</h3>
-              <p>{{ user.email }}</p>
-              <small>Role: {{ user.role }}</small>
+      <button type="button" class="btn btn-outline-primary btn-sm" (click)="loadUsers()">Refresh</button>
+    </div>
+    <div class="card-body">
+      @if (usersLoading) {
+        <div class="text-center text-muted">Loading users...</div>
+      } @else if (usersError) {
+        <div class="alert alert-danger">{{ usersError }}</div>
+      } @else if (!users.length) {
+        <div class="text-center text-muted">No users found.</div>
+      } @else {
+        <div class="list-group list-group-flush">
+          @for (user of users; track user.id) {
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <h5 class="mb-1">{{ user.username }}</h5>
+                <p class="mb-1">{{ user.email }}</p>
+                <small class="text-muted">Role: {{ user.role }}</small>
+              </div>
+              <button
+                type="button"
+                class="btn btn-outline-warning btn-sm"
+                (click)="toggleUserBlock(user)">
+                {{ user.is_blocked ? 'Unblock' : 'Block' }}
+              </button>
             </div>
-            <button 
-              type="button" 
-              class="btn-secondary" 
-              (click)="toggleUserBlock(user)">
-              {{ user.is_blocked ? 'Unblock' : 'Block' }}
-            </button>
-          </article>
-        }
-      </div>
-    }
-  </section>
+          }
+        </div>
+      }
+    </div>
+  </div>
 </div>

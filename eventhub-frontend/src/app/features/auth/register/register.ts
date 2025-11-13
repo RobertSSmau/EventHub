@@ -8,8 +8,7 @@ import { RegisterRequest } from '../../../shared/models/user.model';
 @Component({
   selector: 'app-register',
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './register.html',
-  styleUrl: './register.scss'
+  templateUrl: './register.html'
 })
 export class Register implements OnInit {
   credentials: RegisterRequest = {

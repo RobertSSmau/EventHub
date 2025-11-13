@@ -16,8 +16,7 @@ import { Router } from '@angular/router';
   selector: 'app-user-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './user-dashboard.html',
-  styleUrl: './user-dashboard.scss',
+  templateUrl: './user-dashboard.html'
 })
 export class UserDashboard implements OnInit {
   myEvents: Event[] = [];
@@ -49,6 +48,10 @@ export class UserDashboard implements OnInit {
   selectedCategory = '';
   selectedStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | '' = '';
   categories: string[] = ['Tech', 'Business', 'Art', 'Sports', 'Education', 'Other'];
+
+  activeSection: 'create' | 'my-events' | 'registrations' | 'browse' = 'my-events';
+
+  isMobileMenuOpen = false;
 
   constructor(
     private eventService: EventService,
@@ -223,6 +226,16 @@ export class UserDashboard implements OnInit {
 
   openChat(eventId: number): void {
     this.router.navigate(['/chat'], { queryParams: { eventId } });
+  }
+
+  setActiveSection(section: 'create' | 'my-events' | 'registrations' | 'browse'): void {
+    this.activeSection = section;
+    // Chiudi il menu mobile quando si seleziona una sezione
+    this.isMobileMenuOpen = false;
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 
   logout(): void {

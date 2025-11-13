@@ -1,76 +1,84 @@
-<div class="events-container">
-  <div class="header">
+<div class="container-fluid p-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h1>Upcoming Events</h1>
-      <p>Explore approved events and reserve your seat.</p>
+      <h1 class="h2 mb-1">Upcoming Events</h1>
+      <p class="text-muted mb-0">Explore approved events and reserve your seat.</p>
     </div>
     @if (authService.isAuthenticated) {
-      <a routerLink="/dashboard" class="link-button">Go to my dashboard</a>
+      <a routerLink="/dashboard" class="btn btn-outline-primary">Go to my dashboard</a>
     } @else {
-      <a routerLink="/login" class="link-button">Login to create events</a>
+      <a routerLink="/login" class="btn btn-outline-primary">Login to create events</a>
     }
   </div>
 
   @if (successMessage) {
-    <div class="success-message">{{ successMessage }}</div>
+    <div class="alert alert-success">{{ successMessage }}</div>
   }
   @if (error) {
-    <div class="error-message">{{ error }}</div>
+    <div class="alert alert-danger">{{ error }}</div>
   }
 
   @if (loading) {
-    <div class="state">Loading events...</div>
+    <div class="text-center text-muted">Loading events...</div>
   } @else if (!events.length) {
-    <div class="state">No events available right now.</div>
+    <div class="text-center text-muted">No events available right now.</div>
   } @else {
-    <div class="events-grid">
+    <div class="row g-4">
       @for (event of events; track event.id) {
-        <article class="event-card">
-          <header>
-            <div>
-              <h2>{{ event.title }}</h2>
-              <small>{{ event.category }}</small>
+        <div class="col-lg-4 col-md-6">
+          <div class="card h-100">
+            <div class="card-body d-flex flex-column">
+              <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                  <h5 class="card-title mb-1">{{ event.title }}</h5>
+                  <small class="text-muted">{{ event.category }}</small>
+                </div>
+                <span class="badge" [class]="event.status.toLowerCase() === 'approved' ? 'bg-success' : event.status.toLowerCase() === 'pending' ? 'bg-warning' : 'bg-secondary'">
+                  {{ event.status }}
+                </span>
+              </div>
+
+              <p class="card-text flex-grow-1">{{ event.description }}</p>
+
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <small class="text-muted d-block">Date</small>
+                  <div class="fw-semibold small">{{ event.date | date: 'fullDate' }}</div>
+                  <div class="text-muted small">{{ event.date | date: 'shortTime' }}</div>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted d-block">Location</small>
+                  <div class="fw-semibold small">{{ event.location }}</div>
+                </div>
+                <div class="col-6">
+                  <small class="text-muted d-block">Capacity</small>
+                  <div class="fw-semibold small">{{ event.capacity || 'Unlimited' }}</div>
+                </div>
+              </div>
+
+              <div class="mt-auto">
+                <button
+                  type="button"
+                  class="btn btn-primary w-100 mb-2"
+                  [disabled]="registeringIds.has(event.id)"
+                  (click)="register(event)">
+                  @if (isRegistered(event.id)) {
+                    {{ registeringIds.has(event.id) ? 'Leaving...' : 'Leave event' }}
+                  } @else {
+                    {{ registeringIds.has(event.id) ? 'Registering...' : 'Register' }}
+                  }
+                </button>
+                @if (!authService.isAuthenticated) {
+                  <small class="text-muted d-block text-center">Login to manage registrations</small>
+                } @else if (isRegistered(event.id)) {
+                  <button type="button" class="btn btn-outline-info btn-sm w-100" (click)="openChat(event)">
+                    Open event chat
+                  </button>
+                }
+              </div>
             </div>
-            <span class="status" [class]="event.status.toLowerCase()">
-              {{ event.status }}
-            </span>
-          </header>
-          <p class="description">{{ event.description }}</p>
-          <dl>
-            <div>
-              <dt>Date</dt>
-              <dd>{{ event.date | date: 'fullDate' }} - {{ event.date | date: 'shortTime' }}</dd>
-            </div>
-            <div>
-              <dt>Location</dt>
-              <dd>{{ event.location }}</dd>
-            </div>
-            <div>
-              <dt>Capacity</dt>
-              <dd>{{ event.capacity || 'Unlimited' }}</dd>
-            </div>
-          </dl>
-          <footer>
-            <button 
-              type="button" 
-              class="btn-primary"
-              [disabled]="registeringIds.has(event.id)"
-              (click)="register(event)">
-              @if (isRegistered(event.id)) {
-                {{ registeringIds.has(event.id) ? 'Leaving...' : 'Leave event' }}
-              } @else {
-                {{ registeringIds.has(event.id) ? 'Registering...' : 'Register' }}
-              }
-            </button>
-            @if (!authService.isAuthenticated) {
-              <small class="hint">Login to manage registrations</small>
-            } @else if (isRegistered(event.id)) {
-              <button type="button" class="link-button" (click)="openChat(event)">
-                Open event chat
-              </button>
-            }
-          </footer>
-        </article>
+          </div>
+        </div>
       }
     </div>
   }

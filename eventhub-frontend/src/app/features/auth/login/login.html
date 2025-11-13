@@ -1,106 +1,121 @@
-<div class="login-container">
-  <div class="login-card">
-    <h1>EventHub Login</h1>
-    
-    <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
-      <div class="form-group">
-        <label for="email">Email</label>
-        <input 
-          type="email" 
-          id="email" 
-          name="email"
-          [(ngModel)]="credentials.email" 
-          required 
-          email
-          placeholder="your@email.com"
-          [disabled]="loading">
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-white">
+  <div class="card shadow-sm border" style="max-width: 400px; width: 100%;">
+    <div class="card-body p-4">
+      <!-- Logo Placeholder -->
+      <div class="text-center mb-4">
+        <img src="/assets/logo.png" alt="Logo" style="width: 300px; height: auto; display: block; margin: 0 auto;">
       </div>
 
-      <div class="form-group">
-        <label for="password">Password</label>
-        <input 
-          type="password" 
-          id="password" 
-          name="password"
-          [(ngModel)]="credentials.password" 
-          required
-          placeholder="Enter your password"
-          [disabled]="loading">
-      </div>
+      <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
+        <div class="mb-3">
+          <label for="email" class="form-label fw-semibold">Email</label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            class="form-control"
+            [(ngModel)]="credentials.email"
+            required
+            email
+            placeholder="your@email.com"
+            [disabled]="loading">
+        </div>
 
-      @if (error) {
-        <div class="error-message">{{ error }}</div>
-      }
+        <div class="mb-3">
+          <label for="password" class="form-label fw-semibold">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            class="form-control"
+            [(ngModel)]="credentials.password"
+            required
+            placeholder="Enter your password"
+            [disabled]="loading">
+        </div>
 
-      <button 
-        type="submit" 
-        [disabled]="!loginForm.valid || loading"
-        class="btn-primary">
-        {{ loading ? 'Logging in...' : 'Login' }}
-      </button>
-    </form>
-
-    <button type="button" class="link-button" (click)="toggleForgotPassword()">
-      {{ forgotPasswordOpen ? 'Hide password reset' : 'Forgot password?' }}
-    </button>
-
-    @if (forgotPasswordOpen) {
-      <div class="panel">
-        <h3>Password reset</h3>
-        <p>Enter your account email to receive a reset link.</p>
-        <label for="resetEmail">Email</label>
-        <input 
-          type="email"
-          id="resetEmail"
-          name="resetEmail"
-          [(ngModel)]="passwordResetEmail"
-          placeholder="your@email.com"
-          [disabled]="passwordResetLoading">
-        @if (passwordResetError) {
-          <small class="field-error">{{ passwordResetError }}</small>
+        @if (error) {
+          <div class="alert alert-danger py-2">{{ error }}</div>
         }
-        @if (passwordResetMessage) {
-          <small class="field-success">{{ passwordResetMessage }}</small>
-        }
-        <button 
-          type="button" 
-          class="btn-secondary" 
-          (click)="requestPasswordReset()"
-          [disabled]="passwordResetLoading">
-          {{ passwordResetLoading ? 'Sending...' : 'Send reset email' }}
+
+        <button
+          type="submit"
+          [disabled]="!loginForm.valid || loading"
+          class="btn btn-primary w-100 mb-3">
+          {{ loading ? 'Logging in...' : 'Login' }}
         </button>
-      </div>
-    }
+      </form>
 
-    <div class="panel">
-      <h3>Need verification email again?</h3>
-      <div class="form-group compact">
-        <label for="resendEmail">Email</label>
-        <input
-          type="email"
-          id="resendEmail"
-          name="resendEmail"
-          [(ngModel)]="resendEmail"
-          placeholder="your@email.com"
-          [disabled]="resendLoading">
-      </div>
-      @if (resendError) {
-        <small class="field-error">{{ resendError }}</small>
-      }
-      @if (resendMessage) {
-        <small class="field-success">{{ resendMessage }}</small>
-      }
-      <button 
-        type="button" 
-        class="btn-secondary" 
-        (click)="resendVerificationEmail()"
-        [disabled]="resendLoading">
-        {{ resendLoading ? 'Sending...' : 'Resend verification email' }}
+      <button type="button" class="btn btn-link w-100 text-decoration-none" (click)="toggleForgotPassword()">
+        {{ forgotPasswordOpen ? 'Hide password reset' : 'Forgot password?' }}
       </button>
-    </div>
 
-    <div class="register-link">
-      <p>Don't have an account? <a routerLink="/register">Register here</a></p>
+      @if (forgotPasswordOpen) {
+        <div class="card mt-3 border">
+          <div class="card-body">
+            <h5 class="card-title">Password reset</h5>
+            <p class="card-text text-muted">Enter your account email to receive a reset link.</p>
+            <div class="mb-3">
+              <label for="resetEmail" class="form-label">Email</label>
+              <input
+                type="email"
+                id="resetEmail"
+                name="resetEmail"
+                class="form-control"
+                [(ngModel)]="passwordResetEmail"
+                placeholder="your@email.com"
+                [disabled]="passwordResetLoading">
+            </div>
+            @if (passwordResetError) {
+              <div class="text-danger small mb-2">{{ passwordResetError }}</div>
+            }
+            @if (passwordResetMessage) {
+              <div class="text-success small mb-2">{{ passwordResetMessage }}</div>
+            }
+            <button
+              type="button"
+              class="btn btn-outline-secondary w-100"
+              (click)="requestPasswordReset()"
+              [disabled]="passwordResetLoading">
+              {{ passwordResetLoading ? 'Sending...' : 'Send reset email' }}
+            </button>
+          </div>
+        </div>
+      }
+
+      <div class="card mt-3 border">
+        <div class="card-body">
+          <h5 class="card-title">Need verification email again?</h5>
+          <div class="mb-3">
+            <label for="resendEmail" class="form-label">Email</label>
+            <input
+              type="email"
+              id="resendEmail"
+              name="resendEmail"
+              class="form-control"
+              [(ngModel)]="resendEmail"
+              placeholder="your@email.com"
+              [disabled]="resendLoading">
+          </div>
+          @if (resendError) {
+            <div class="text-danger small mb-2">{{ resendError }}</div>
+          }
+          @if (resendMessage) {
+            <div class="text-success small mb-2">{{ resendMessage }}</div>
+          }
+          <button
+            type="button"
+            class="btn btn-outline-secondary w-100"
+            (click)="resendVerificationEmail()"
+            [disabled]="resendLoading">
+            {{ resendLoading ? 'Sending...' : 'Resend verification email' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <p class="mb-0">Don't have an account? <a routerLink="/register" class="text-primary text-decoration-none fw-semibold">Register here</a></p>
+      </div>
     </div>
   </div>
 </div>

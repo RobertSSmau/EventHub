@@ -1,237 +1,234 @@
-<div class="chat-layout">
-  <aside class="sidebar">
-    <header>
-      <button type="button" class="back-btn" (click)="goBack()">← Back</button>
-      <h2>Conversations</h2>
+<div class="d-flex vh-100">
+  <!-- Sidebar -->
+  <div class="bg-white border-end" style="width: 300px;">
+    <div class="p-3 border-bottom">
+      <button type="button" class="btn btn-link text-decoration-none p-0 mb-2" (click)="goBack()">← Back</button>
+      <h5 class="mb-3">Conversations</h5>
       <input
         type="text"
+        class="form-control"
         placeholder="Search..."
         [(ngModel)]="searchTerm"
-        (ngModelChange)="onSearchChange()"
-      >
-    </header>
+        (ngModelChange)="onSearchChange()">
+    </div>
 
-    @if (conversationsLoading) {
-      <div class="state">Loading...</div>
-    } @else if (conversationsError) {
-      <div class="error-message">{{ conversationsError }}</div>
-    } @else if (!filteredConversations.length) {
-      <div class="state">No conversations yet.</div>
-    } @else {
-      <ul class="conversation-list">
-        @for (conversation of filteredConversations; track conversation._id) {
-          <li
-            [class.active]="selectedConversation?._id === conversation._id"
-            (click)="selectConversation(conversation)"
-          >
-            <div class="title-row">
-              <h3>{{ conversation.displayName || 'Conversation' }}</h3>
-              <small>{{ conversation.lastMessage?.timestamp | date:'shortTime' }}</small>
-            </div>
-            <p>{{ conversation.lastMessage?.content || 'No messages yet' }}</p>
-            <div class="meta">
-              @if (conversation.unreadCount) {
-                <span class="pill">{{ conversation.unreadCount }}</span>
-              }
-              <span class="type">{{ conversation.type }}</span>
-            </div>
-            @if (typingSummary(conversation._id)) {
-              <small class="typing">{{ typingSummary(conversation._id) }}</small>
-            }
-          </li>
-        }
-      </ul>
-    }
-  </aside>
-
-  <section class="chat-panel" *ngIf="selectedConversation as activeConversation; else placeholder">
-    <header>
-      <div>
-        <h2>{{ activeConversation.displayName }}</h2>
-        <p>
-          {{ activeConversation.participantsInfo?.length || 0 }} participants
-        </p>
-      </div>
-      <div class="actions">
-        <button class="link report-btn" (click)="openReportModal(activeConversation)">
-          Report
-        </button>
-        <button class="link" (click)="loadMessages(activeConversation)">
-          Refresh
-        </button>
-      </div>
-    </header>
-
-    <div class="messages" #messageList>
-      @if (hasMoreMessages) {
-        <button class="link load-more" (click)="loadOlderMessages()">
-          Load previous messages
-        </button>
-      }
-
-      @if (messagesLoading && !messages.length) {
-        <div class="state">Loading messages...</div>
-      } @else if (messagesError) {
-        <div class="error-message">{{ messagesError }}</div>
-      } @else if (!messages.length) {
-        <div class="state">Start the conversation!</div>
+    <div class="flex-grow-1 overflow-auto">
+      @if (conversationsLoading) {
+        <div class="text-center text-muted p-3">Loading...</div>
+      } @else if (conversationsError) {
+        <div class="alert alert-danger m-3">{{ conversationsError }}</div>
+      } @else if (!filteredConversations.length) {
+        <div class="text-center text-muted p-3">No conversations yet.</div>
       } @else {
-        <div class="message"
-             *ngFor="let message of messages; trackBy: trackByMessage"
-             [class.me]="isOwnMessage(message)">
-          <div class="bubble">
-            <div class="meta">
-              <span class="author">{{ message.sender?.username || 'Unknown' }}</span>
-              <span class="time">{{ message.createdAt | date:'shortTime' }}</span>
+        <div class="list-group list-group-flush">
+          @for (conversation of filteredConversations; track conversation._id) {
+            <div
+              class="list-group-item list-group-item-action cursor-pointer"
+              [class.active]="selectedConversation?._id === conversation._id"
+              (click)="selectConversation(conversation)">
+              <div class="d-flex justify-content-between align-items-start mb-1">
+                <h6 class="mb-0">{{ conversation.displayName || 'Conversation' }}</h6>
+                <small class="text-muted">{{ conversation.lastMessage?.timestamp | date:'shortTime' }}</small>
+              </div>
+              <p class="mb-1 small text-truncate">{{ conversation.lastMessage?.content || 'No messages yet' }}</p>
+              <div class="d-flex justify-content-between align-items-center">
+                @if (conversation.unreadCount) {
+                  <span class="badge bg-primary">{{ conversation.unreadCount }}</span>
+                } @else {
+                  <span></span>
+                }
+                <small class="text-muted">{{ conversation.type }}</small>
+              </div>
+              @if (typingSummary(conversation._id)) {
+                <small class="text-info">{{ typingSummary(conversation._id) }}</small>
+              }
             </div>
-            <p>{{ message.content }}</p>
-          </div>
+          }
         </div>
       }
     </div>
+  </div>
 
-    <div class="composer">
-      <textarea
-        [(ngModel)]="messageContent"
-        (ngModelChange)="onMessageInputChange()"
-        placeholder="Write a message..."
-      ></textarea>
-      <button class="btn-primary" (click)="sendMessage()" [disabled]="!messageContent.trim()">
-        Send
-      </button>
+  <!-- Chat Panel -->
+  <div class="flex-grow-1 d-flex flex-column bg-light" *ngIf="selectedConversation as activeConversation; else placeholder">
+    <div class="bg-white border-bottom p-3 d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="mb-0">{{ activeConversation.displayName }}</h5>
+        <small class="text-muted">{{ activeConversation.participantsInfo?.length || 0 }} participants</small>
+      </div>
+      <div>
+        <button class="btn btn-outline-danger btn-sm me-2" (click)="openReportModal(activeConversation)">
+          Report
+        </button>
+        <button class="btn btn-outline-primary btn-sm" (click)="loadMessages(activeConversation)">
+          Refresh
+        </button>
+      </div>
     </div>
-  </section>
+
+    <div class="flex-grow-1 overflow-auto p-3" #messageList>
+      @if (hasMoreMessages) {
+        <div class="text-center mb-3">
+          <button class="btn btn-outline-primary btn-sm" (click)="loadOlderMessages()">
+            Load previous messages
+          </button>
+        </div>
+      }
+
+      @if (messagesLoading && !messages.length) {
+        <div class="text-center text-muted">Loading messages...</div>
+      } @else if (messagesError) {
+        <div class="alert alert-danger">{{ messagesError }}</div>
+      } @else if (!messages.length) {
+        <div class="text-center text-muted">Start the conversation!</div>
+      } @else {
+        @for (message of messages; track message._id) {
+          <div class="d-flex mb-3" [class.justify-content-end]="isOwnMessage(message)">
+            <div class="card" [class.bg-primary]="isOwnMessage(message)" [class.text-white]="isOwnMessage(message)" style="max-width: 70%;">
+              <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                  <small class="fw-semibold">{{ message.sender?.username || 'Unknown' }}</small>
+                  <small class="text-muted">{{ message.createdAt | date:'shortTime' }}</small>
+                </div>
+                <p class="mb-0">{{ message.content }}</p>
+              </div>
+            </div>
+          </div>
+        }
+      }
+    </div>
+
+    <div class="bg-white border-top p-3">
+      <div class="input-group">
+        <textarea
+          class="form-control"
+          rows="2"
+          [(ngModel)]="messageContent"
+          (ngModelChange)="onMessageInputChange()"
+          placeholder="Write a message..."
+          (keydown.enter)="sendMessage()"></textarea>
+        <button class="btn btn-primary" (click)="sendMessage()" [disabled]="!messageContent.trim()">
+          Send
+        </button>
+      </div>
+    </div>
+  </div>
 
   <ng-template #placeholder>
-    <section class="chat-panel placeholder">
-      <p>Select a conversation to start chatting.</p>
-    </section>
+    <div class="flex-grow-1 d-flex align-items-center justify-content-center bg-light">
+      <div class="text-center text-muted">
+        <p class="mb-0">Select a conversation to start chatting.</p>
+      </div>
+    </div>
   </ng-template>
 </div>
 
 <!-- Report Modal -->
-<div class="modal-overlay" *ngIf="showReportModal && selectedConversation" (click)="closeReportModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <header class="modal-header">
-      <h3>Report {{ reportTarget === 'event' ? 'Event' : 'User' }}</h3>
-      <button type="button" class="close-btn" (click)="closeReportModal()">×</button>
-    </header>
-
-    <div class="modal-body">
-      <div *ngIf="reportTarget === 'event'">
-        <div class="report-info">
-          <h4>Reporting Event: {{ selectedConversation.displayName }}</h4>
-          <p>You are about to report this event for violating community guidelines.</p>
-        </div>
+<div class="modal fade show d-block" *ngIf="showReportModal && selectedConversation" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Report {{ reportTarget === 'event' ? 'Event' : 'User' }}</h5>
+        <button type="button" class="btn-close" (click)="closeReportModal()"></button>
       </div>
-      <div *ngIf="reportTarget === 'user'">
-        <div class="report-info">
-          <h4>Select User to Report</h4>
-          <p>Choose which user you want to report from this conversation:</p>
-          
-          <!-- User selection dropdown with search -->
-          <div class="user-selector">
-            <div class="dropdown-container">
+
+      <div class="modal-body">
+        @if (reportTarget === 'event') {
+          <div class="alert alert-info">
+            <h6>Reporting Event: {{ selectedConversation.displayName }}</h6>
+            <p class="mb-0">You are about to report this event for violating community guidelines.</p>
+          </div>
+        }
+
+        @if (reportTarget === 'user') {
+          <div class="mb-3">
+            <h6>Select User to Report</h6>
+            <p>Choose which user you want to report from this conversation:</p>
+
+            <div class="mb-3">
               <input
                 type="text"
-                class="user-search-input"
+                class="form-control"
                 [(ngModel)]="userSearchTerm"
                 (input)="onUserSearchInput()"
                 (focus)="showUserDropdown = true"
                 placeholder="Search users..."
                 autocomplete="off">
-              
+
               @if (selectedUserId) {
-                <div class="selected-user-display">
-                  <span class="selected-user-name">{{ selectedUserName }}</span>
-                  <button type="button" class="clear-selection" (click)="selectedUserId = null; userSearchTerm = ''">×</button>
+                <div class="d-flex justify-content-between align-items-center bg-light p-2 rounded mt-2">
+                  <span>{{ selectedUserName }}</span>
+                  <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectedUserId = null; userSearchTerm = ''">×</button>
                 </div>
               }
-              
+
               @if (showUserDropdown && filteredUsers.length > 0) {
-                <div class="user-dropdown">
-                  <div 
-                    class="user-option"
-                    *ngFor="let user of filteredUsers"
-                    (click)="selectUserToReport(user.id)">
-                    <span class="user-avatar">{{ user.username.charAt(0).toUpperCase() }}</span>
-                    <span class="user-info">
-                      <span class="username">{{ user.username }}</span>
-                    </span>
-                  </div>
-                </div>
-              }
-              
-              @if (showUserDropdown && filteredUsers.length === 0 && userSearchTerm.trim()) {
-                <div class="user-dropdown">
-                  <div class="no-users">No users found</div>
+                <div class="list-group mt-1" style="max-height: 200px; overflow-y: auto;">
+                  @for (user of filteredUsers; track user.id) {
+                    <button type="button" class="list-group-item list-group-item-action d-flex align-items-center" (click)="selectUserToReport(user.id)">
+                      <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        {{ user.username.charAt(0).toUpperCase() }}
+                      </div>
+                      <span>{{ user.username }}</span>
+                    </button>
+                  }
                 </div>
               }
             </div>
           </div>
-        </div>
+        }
+
+        @if (selectedConversation?.type === 'event_group') {
+          <div class="mb-3">
+            <h6>What do you want to report?</h6>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="reportTarget" value="event" [(ngModel)]="reportTarget" id="reportEvent">
+              <label class="form-check-label" for="reportEvent">Report the Event</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="reportTarget" value="user" [(ngModel)]="reportTarget" id="reportUser">
+              <label class="form-check-label" for="reportUser">Report a User</label>
+            </div>
+          </div>
+        }
+
+        <form>
+          <div class="mb-3">
+            <label class="form-label">Reason <span class="text-danger">*</span></label>
+            <select class="form-select" [(ngModel)]="reportReason" name="reason" required>
+              <option value="">Select a reason</option>
+              <option value="spam">Spam</option>
+              <option value="harassment">Harassment</option>
+              <option value="inappropriate_content">Inappropriate Content</option>
+              <option value="fake_event">Fake Event</option>
+              <option value="scam">Scam</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Description (optional)</label>
+            <textarea
+              class="form-control"
+              [(ngModel)]="reportDescription"
+              name="description"
+              rows="3"
+              placeholder="Provide additional details about the issue...">
+            </textarea>
+          </div>
+        </form>
       </div>
 
-      <!-- Report target selection for event chats -->
-      <div *ngIf="selectedConversation?.type === 'event_group'" class="report-target-selection">
-        <h4>What do you want to report?</h4>
-        <div class="target-options">
-          <label class="target-option">
-            <input
-              type="radio"
-              name="reportTarget"
-              value="event"
-              [(ngModel)]="reportTarget">
-            <span>Report the Event</span>
-          </label>
-          <label class="target-option">
-            <input
-              type="radio"
-              name="reportTarget"
-              value="user"
-              [(ngModel)]="reportTarget">
-            <span>Report a User</span>
-          </label>
-        </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeReportModal()">Cancel</button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="submitReport(selectedConversation)"
+          [disabled]="!reportReason || (reportTarget === 'user' && !selectedUserId)">
+          Submit Report
+        </button>
       </div>
-
-      <form class="report-form">
-        <label>
-          Reason *
-          <select [(ngModel)]="reportReason" name="reason" required>
-            <option value="">Select a reason</option>
-            <option value="spam">Spam</option>
-            <option value="harassment">Harassment</option>
-            <option value="inappropriate_content">Inappropriate Content</option>
-            <option value="fake_event">Fake Event</option>
-            <option value="scam">Scam</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-
-        <label>
-          Description (optional)
-          <textarea
-            [(ngModel)]="reportDescription"
-            name="description"
-            rows="3"
-            placeholder="Provide additional details about the issue...">
-          </textarea>
-        </label>
-      </form>
     </div>
-
-    <footer class="modal-footer">
-      <button type="button" class="btn-secondary" (click)="closeReportModal()">
-        Cancel
-      </button>
-      <button
-        type="button"
-        class="btn-primary"
-        (click)="submitReport(selectedConversation)"
-        [disabled]="!reportReason || (reportTarget === 'user' && !selectedUserId)">
-        Submit Report
-      </button>
-    </footer>
   </div>
 </div>

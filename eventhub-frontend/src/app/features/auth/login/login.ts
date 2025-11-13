@@ -8,8 +8,7 @@ import { LoginRequest, AuthResponse } from '../../../shared/models/user.model';
 @Component({
   selector: 'app-login',
   imports: [CommonModule, FormsModule, RouterLink],
-  templateUrl: './login.html',
-  styleUrl: './login.scss'
+  templateUrl: './login.html'
 })
 export class Login {
   credentials: LoginRequest = {

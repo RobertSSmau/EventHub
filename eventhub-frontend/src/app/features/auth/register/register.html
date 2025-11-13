@@ -1,101 +1,114 @@
-<div class="register-container">
-  <div class="register-card">
-    <h1>Create Account</h1>
-    <p class="subtitle">Join EventHub today</p>
-    
-    @if (success) {
-      <div class="success-message">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-          <polyline points="22 4 12 14.01 9 11.01"></polyline>
-        </svg>
-        <h2>Registration Successful!</h2>
-        <p>Redirecting to your dashboard...</p>
-      </div>
-    } @else {
-      <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
-        <div class="form-group">
-          <label for="username">Username</label>
-          <input 
-            type="text" 
-            id="username" 
-            name="username"
-            [(ngModel)]="credentials.username" 
-            required 
-            minlength="3"
-            placeholder="Choose a username"
-            [disabled]="loading">
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-white">
+  <div class="card shadow-sm border" style="max-width: 450px; width: 100%;">
+    <div class="card-body p-4">
+
+      @if (success) {
+        <!-- Logo Placeholder -->
+        <div class="text-center mb-4">
+          <img src="/assets/logo.png" alt="Logo" style="width: 300px; height: auto; display: block; margin: 0 auto;">
+        </div>
+        <div class="text-center p-5">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-success mb-3">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          <h2 class="mb-3">Registration Successful!</h2>
+          <p class="text-muted">Redirecting to your dashboard...</p>
+        </div>
+      } @else {
+        <!-- Logo Placeholder -->
+        <div class="text-center mb-4">
+          <img src="/assets/logo.png" alt="Logo" style="width: 300px; height: auto; display: block; margin: 0 auto;">
         </div>
 
-        <div class="form-group">
-          <label for="email">Email</label>
-          <input 
-            type="email" 
-            id="email" 
-            name="email"
-            [(ngModel)]="credentials.email" 
-            required 
-            email
-            placeholder="your@email.com"
-            [disabled]="loading">
+        <form (ngSubmit)="onSubmit()" #registerForm="ngForm">
+          <div class="mb-3">
+            <label for="username" class="form-label fw-semibold">Username</label>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              class="form-control"
+              [(ngModel)]="credentials.username"
+              required
+              minlength="3"
+              placeholder="Choose a username"
+              [disabled]="loading">
+          </div>
+
+          <div class="mb-3">
+            <label for="email" class="form-label fw-semibold">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              class="form-control"
+              [(ngModel)]="credentials.email"
+              required
+              email
+              placeholder="your@email.com"
+              [disabled]="loading">
+          </div>
+
+          <div class="mb-3">
+            <label for="password" class="form-label fw-semibold">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              class="form-control"
+              [(ngModel)]="credentials.password"
+              required
+              minlength="8"
+              placeholder="At least 8 characters, mix of cases, numbers & symbol"
+              [disabled]="loading">
+            @if (credentials.password && credentials.password.length < 8) {
+              <div class="text-danger small mt-1">Password must be at least 8 characters</div>
+            }
+            @if (passwordRequirements.length) {
+              <ul class="text-muted small mt-2 ps-3">
+                @for (rule of passwordRequirements; track rule) {
+                  <li>{{ rule }}</li>
+                }
+              </ul>
+            }
+          </div>
+
+          <div class="mb-3">
+            <label for="confirmPassword" class="form-label fw-semibold">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              class="form-control"
+              [(ngModel)]="confirmPassword"
+              required
+              placeholder="Re-enter your password"
+              [disabled]="loading">
+            @if (confirmPassword && !passwordsMatch) {
+              <div class="text-danger small mt-1">Passwords do not match</div>
+            }
+            @if (confirmPassword && passwordsMatch) {
+              <div class="text-success small mt-1">✓ Passwords match</div>
+            }
+          </div>
+
+          @if (error) {
+            <div class="alert alert-danger py-2">{{ error }}</div>
+          }
+
+          <button
+            type="submit"
+            [disabled]="!isFormValid || loading"
+            class="btn btn-primary w-100 mt-3">
+            {{ loading ? 'Creating account...' : 'Register' }}
+          </button>
+        </form>
+
+        <div class="text-center mt-4">
+          <p class="mb-0">Already have an account? <a routerLink="/login" class="text-primary text-decoration-none fw-semibold">Login here</a></p>
         </div>
-
-        <div class="form-group">
-          <label for="password">Password</label>
-          <input 
-            type="password" 
-            id="password" 
-            name="password"
-            [(ngModel)]="credentials.password" 
-            required
-            minlength="8"
-            placeholder="At least 8 characters, mix of cases, numbers & symbol"
-            [disabled]="loading">
-          @if (credentials.password && credentials.password.length < 8) {
-            <small class="field-error">Password must be at least 8 characters</small>
-          }
-          @if (passwordRequirements.length) {
-            <ul class="requirements">
-              @for (rule of passwordRequirements; track rule) {
-                <li>{{ rule }}</li>
-              }
-            </ul>
-          }
-        </div>
-
-        <div class="form-group">
-          <label for="confirmPassword">Confirm Password</label>
-          <input 
-            type="password" 
-            id="confirmPassword" 
-            name="confirmPassword"
-            [(ngModel)]="confirmPassword" 
-            required
-            placeholder="Re-enter your password"
-            [disabled]="loading">
-          @if (confirmPassword && !passwordsMatch) {
-            <small class="field-error">Passwords do not match</small>
-          }
-          @if (confirmPassword && passwordsMatch) {
-            <small class="field-success">✓ Passwords match</small>
-          }
-        </div>
-
-        @if (error) {
-          <div class="error-message">{{ error }}</div>
-        }
-
-        <button 
-          type="submit" 
-          [disabled]="!isFormValid || loading"
-          class="btn-primary">
-          {{ loading ? 'Creating account...' : 'Register' }}
-        </button>
-      </form>
-
-      <div class="login-link">
-        <p>Already have an account? <a routerLink="/login">Login here</a></p>
-      </div>
-    }
+      }
+    </div>
   </div>
 </div>

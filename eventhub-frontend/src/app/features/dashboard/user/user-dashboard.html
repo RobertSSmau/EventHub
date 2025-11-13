@@ -1,264 +1,403 @@
-<div class="dashboard">
-  <header class="dashboard-header">
-    <h1>My Dashboard</h1>
-    <button type="button" class="logout-btn" (click)="logout()">Logout</button>
-  </header>
-
-  <section class="panel create-panel">
-    <h2>Create a new event</h2>
-    <p>Your events require admin approval before going public.</p>
-
-    @if (createSuccess) {
-      <div class="success-message">{{ createSuccess }}</div>
+<div class="container-fluid">
+  <style>
+    .overlay-active {
+      position: relative;
     }
-    @if (createError) {
-      <div class="error-message">{{ createError }}</div>
+    .overlay-active::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1040;
     }
+    @media (max-width: 991.98px) {
+      .col-lg-3.col-xl-2 {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px !important;
+        z-index: 1050;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+      }
+    }
+  </style>
 
-    <form (ngSubmit)="submitEvent()" #createForm="ngForm">
-      <div class="grid">
-        <label>
-          Title
-          <input
-            type="text"
-            name="title"
-            [(ngModel)]="createEventData.title"
-            required
-            placeholder="Community meetup">
-        </label>
-        <label>
-          Category
-          <input
-            type="text"
-            name="category"
-            [(ngModel)]="createEventData.category"
-            required
-            placeholder="Tech">
-        </label>
-      </div>
-      <label>
-        Description
-        <textarea
-          name="description"
-          rows="3"
-          [(ngModel)]="createEventData.description"
-          required
-          placeholder="Describe the agenda, speakers, and value.">
-        </textarea>
-      </label>
-      <div class="grid">
-        <label>
-          Location
-          <input
-            type="text"
-            name="location"
-            [(ngModel)]="createEventData.location"
-            required
-            placeholder="Rome, Italy">
-        </label>
-        <label>
-          Date & Time
-          <input
-            type="datetime-local"
-            name="dateLocal"
-            [(ngModel)]="createEventData.dateLocal"
-            required>
-        </label>
-      </div>
-      <div class="grid">
-        <label>
-          Capacity (optional)
-          <input
-            type="number"
-            min="1"
-            name="capacity"
-            [(ngModel)]="createEventData.capacity"
-            placeholder="100">
-        </label>
-        <label>
-          Cover image URL (optional)
-          <input
-            type="url"
-            name="image_url"
-            [(ngModel)]="createEventData.image_url"
-            placeholder="https://...">
-        </label>
-      </div>
-      <button 
-        type="submit"
-        class="btn-primary"
-        [disabled]="createLoading || !createForm.valid">
-        {{ createLoading ? 'Saving...' : 'Submit for approval' }}
+  <!-- Top Bar per Mobile -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-light d-block d-lg-none">
+    <div class="container-fluid">
+      <button class="btn btn-outline-secondary" type="button" (click)="toggleMobileMenu()">
+        <i class="bi bi-list"></i>
       </button>
-    </form>
-  </section>
+      <span class="navbar-brand mb-0 h1 mx-auto">Dashboard</span>
+      <button type="button" class="btn btn-outline-danger" (click)="logout()">Logout</button>
+    </div>
+  </nav>
 
-  <section class="panel">
-    <header>
-      <div>
-        <h2>My events</h2>
-        <p>Track approval status, participants and manage events.</p>
-      </div>
-      <button type="button" class="link-button" (click)="loadMyEvents()">Refresh</button>
-    </header>
-    @if (myEventsLoading) {
-      <div class="state">Loading your events...</div>
-    } @else if (myEventsError) {
-      <div class="error-message">{{ myEventsError }}</div>
-    } @else if (!myEvents.length) {
-      <div class="state">You have not created any events yet.</div>
-    } @else {
-      <div class="list">
-        @for (event of myEvents; track event.id) {
-          <article>
-            <div>
-              <h3>{{ event.title }}</h3>
-              <p>{{ event.date | date: 'medium' }} • {{ event.location }}</p>
-              <span class="status" [class]="event.status.toLowerCase()">
-                {{ event.status }}
-              </span>
-            </div>
-            <div class="actions">
-              <button type="button" class="link-button" (click)="toggleParticipants(event)">
-                @if (participants[event.id]) { Hide participants } @else { View participants }
-              </button>
-              <button type="button" class="danger" (click)="deleteEvent(event)">
-                Delete
-              </button>
-              <button type="button" class="link-button" (click)="openChat(event.id)">
-                Open chat
-              </button>
-            </div>
-            @if (participants[event.id]) {
-              <ul class="participants">
-                @if (participantLoading.has(event.id)) {
-                  <li>Loading...</li>
-                } @else if (!participants[event.id].length) {
-                  <li>No participants yet.</li>
-                } @else {
-                  @for (participant of participants[event.id]; track participant.id) {
-                    <li>
-                      <strong>{{ participant.username }}</strong>
-                      <span>{{ participant.email }}</span>
-                    </li>
-                  }
-                }
-              </ul>
-            }
-          </article>
-        }
-      </div>
-    }
-  </section>
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-lg-3 col-xl-2 px-0 bg-light" [class.d-none]="!isMobileMenuOpen" [class.d-lg-block]="true" style="min-height: 100vh;">
+      <div class="d-flex flex-column p-3">
+        <!-- Logo Placeholder -->
+        <div class="text-center mb-4">
+          <img src="/assets/logo.png" alt="Logo" style="width: 180px; height: auto; display: block; margin: 0 auto; border-radius: 8px;">
+        </div>
 
-  <section class="panel">
-    <header>
-      <div>
-        <h2>My registrations</h2>
-        <p>Events you have registered for.</p>
-      </div>
-      <button type="button" class="link-button" (click)="loadRegistrations()">Refresh</button>
-    </header>
-    @if (registrationsLoading) {
-      <div class="state">Loading your registrations...</div>
-    } @else if (registrationsError) {
-      <div class="error-message">{{ registrationsError }}</div>
-    } @else if (!myRegistrations.length) {
-      <div class="state">No registrations yet.</div>
-    } @else {
-      <div class="list">
-        @for (registration of myRegistrations; track registration.event_id) {
-          <article>
-            <div>
-              <h3>{{ registration.event?.title }}</h3>
-              <p>{{ registration.event?.date | date: 'longDate' }} • {{ registration.event?.location }}</p>
-            </div>
-            <small>Registered on {{ registration.registered_at | date: 'medium' }}</small>
-            @if (registration.event?.id) {
-              <button type="button" class="link-button" (click)="openChat(registration.event!.id)">
-                Open chat
-              </button>
-            }
-          </article>
-        }
-      </div>
-    }
-  </section>
+        <h5 class="mb-3">Dashboard</h5>
+        <nav class="nav nav-pills flex-column">
+          <a class="nav-link" [class.active]="activeSection === 'create'" (click)="setActiveSection('create')" href="javascript:void(0)">
+            <i class="bi bi-plus-circle me-2"></i>Create Event
+          </a>
+          <a class="nav-link" [class.active]="activeSection === 'my-events'" (click)="setActiveSection('my-events')" href="javascript:void(0)">
+            <i class="bi bi-calendar-event me-2"></i>My Events
+          </a>
+          <a class="nav-link" [class.active]="activeSection === 'registrations'" (click)="setActiveSection('registrations')" href="javascript:void(0)">
+            <i class="bi bi-person-check me-2"></i>My Registrations
+          </a>
+          <a class="nav-link" [class.active]="activeSection === 'browse'" (click)="setActiveSection('browse')" href="javascript:void(0)">
+            <i class="bi bi-search me-2"></i>Browse Events
+          </a>
+        </nav>
 
-  <section class="panel">
-    <header>
-      <div>
-        <h2>Browse events</h2>
-        <p>Discover and register for upcoming events.</p>
-      </div>
-      <button type="button" class="link-button" (click)="loadAvailableEvents()">Refresh</button>
-    </header>
-
-    <!-- Filtri e ricerca -->
-    <div class="filters">
-      <div class="search-bar">
-        <input
-          type="text"
-          [(ngModel)]="searchQuery"
-          (input)="onSearch()"
-          placeholder="Search events..."
-          class="search-input">
-      </div>
-      <div class="filter-controls">
-        <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="filter-select">
-          <option value="">All categories</option>
-          @for (category of categories; track category) {
-            <option [value]="category">{{ category }}</option>
-          }
-        </select>
-        <select [(ngModel)]="selectedStatus" (change)="onFilterChange()" class="filter-select">
-          <option value="">All statuses</option>
-          <option value="APPROVED">Approved</option>
-          <option value="PENDING">Pending</option>
-        </select>
+        <div class="mt-auto d-none d-lg-block">
+          <button type="button" class="btn btn-outline-danger w-100" (click)="logout()">Logout</button>
+        </div>
       </div>
     </div>
 
-    @if (availableEventsLoading) {
-      <div class="state">Loading events...</div>
-    } @else if (availableEventsError) {
-      <div class="error-message">{{ availableEventsError }}</div>
-    } @else if (!availableEvents.length) {
-      <div class="state">No events found.</div>
-    } @else {
-      <div class="list">
-        @for (event of availableEvents; track event.id) {
-          <article>
-            <div class="event-info">
-              <h3>{{ event.title }}</h3>
-              <p class="event-meta">
-                {{ event.date | date: 'medium' }} • {{ event.location }} • {{ event.category }}
-              </p>
-              <p class="event-description">{{ event.description }}</p>
-              <div class="event-stats">
-                <span>Capacity: {{ event.capacity || 'Unlimited' }}</span>
-                <span class="status" [class]="event.status.toLowerCase()">{{ event.status }}</span>
+    <!-- Main Content -->
+    <div class="col-lg-9 col-xl-10 px-4 py-4" [class.overlay-active]="isMobileMenuOpen" (click)="isMobileMenuOpen = false">
+      <!-- Create Event Section -->
+      @if (activeSection === 'create') {
+        <div class="card mb-4">
+          <div class="card-header">
+            <h2 class="h5 mb-1">Create a new event</h2>
+            <p class="text-muted mb-0 small">Your events require admin approval before going public.</p>
+          </div>
+          <div class="card-body">
+            @if (createSuccess) {
+              <div class="alert alert-success">{{ createSuccess }}</div>
+            }
+            @if (createError) {
+              <div class="alert alert-danger">{{ createError }}</div>
+            }
+
+            <form (ngSubmit)="submitEvent()" #createForm="ngForm">
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Title</label>
+                  <input
+                    type="text"
+                    name="title"
+                    class="form-control"
+                    [(ngModel)]="createEventData.title"
+                    required
+                    placeholder="Community meetup">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Category</label>
+                  <input
+                    type="text"
+                    name="category"
+                    class="form-control"
+                    [(ngModel)]="createEventData.category"
+                    required
+                    placeholder="Tech">
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Description</label>
+                <textarea
+                  name="description"
+                  rows="3"
+                  class="form-control"
+                  [(ngModel)]="createEventData.description"
+                  required
+                  placeholder="Describe the agenda, speakers, and value.">
+                </textarea>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    class="form-control"
+                    [(ngModel)]="createEventData.location"
+                    required
+                    placeholder="Rome, Italy">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Date & Time</label>
+                  <input
+                    type="datetime-local"
+                    name="dateLocal"
+                    class="form-control"
+                    [(ngModel)]="createEventData.dateLocal"
+                    required>
+                </div>
+              </div>
+
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Capacity (optional)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    name="capacity"
+                    class="form-control"
+                    [(ngModel)]="createEventData.capacity"
+                    placeholder="100">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fw-semibold">Cover image URL (optional)</label>
+                  <input
+                    type="url"
+                    name="image_url"
+                    class="form-control"
+                    [(ngModel)]="createEventData.image_url"
+                    placeholder="https://...">
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="createLoading || !createForm.valid">
+                {{ createLoading ? 'Saving...' : 'Submit for approval' }}
+              </button>
+            </form>
+          </div>
+        </div>
+      }
+
+      <!-- My Events Section -->
+      @if (activeSection === 'my-events') {
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="h5 mb-1">My events</h2>
+              <p class="text-muted mb-0 small">Track approval status, participants and manage events.</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm" (click)="loadMyEvents()">Refresh</button>
+          </div>
+          <div class="card-body">
+            @if (myEventsLoading) {
+              <div class="text-center text-muted">Loading your events...</div>
+            } @else if (myEventsError) {
+              <div class="alert alert-danger">{{ myEventsError }}</div>
+            } @else if (!myEvents.length) {
+              <div class="text-center text-muted">You have not created any events yet.</div>
+            } @else {
+              <div class="row">
+                @for (event of myEvents; track event.id) {
+                  <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                      @if (event.image_url) {
+                        <img [src]="event.image_url" class="card-img-top" alt="Event image" style="height: 200px; object-fit: cover;">
+                      } @else {
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                          <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                      }
+                      <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text text-muted small">{{ event.date | date: 'medium' }} • {{ event.location }}</p>
+                        <p class="card-text flex-grow-1">{{ event.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                          <span class="badge" [class]="event.status.toLowerCase() === 'approved' ? 'bg-success' : event.status.toLowerCase() === 'pending' ? 'bg-warning' : 'bg-secondary'">
+                            {{ event.status }}
+                          </span>
+                          <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-primary" (click)="toggleParticipants(event)">
+                              @if (participants[event.id]) { Hide } @else { View }
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" (click)="deleteEvent(event)">
+                              Delete
+                            </button>
+                            <button type="button" class="btn btn-outline-info" (click)="openChat(event.id)">
+                              Chat
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      @if (participants[event.id]) {
+                        <div class="card-footer">
+                          @if (participantLoading.has(event.id)) {
+                            <div class="text-muted small">Loading...</div>
+                          } @else if (!participants[event.id].length) {
+                            <div class="text-muted small">No participants yet.</div>
+                          } @else {
+                            <div class="small">
+                              <strong>Participants:</strong>
+                              <ul class="list-unstyled mb-0 mt-1">
+                                @for (participant of participants[event.id]; track participant.id) {
+                                  <li>{{ participant.username }}</li>
+                                }
+                              </ul>
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- My Registrations Section -->
+      @if (activeSection === 'registrations') {
+        <div class="card mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="h5 mb-1">My registrations</h2>
+              <p class="text-muted mb-0 small">Events you have registered for.</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm" (click)="loadRegistrations()">Refresh</button>
+          </div>
+          <div class="card-body">
+            @if (registrationsLoading) {
+              <div class="text-center text-muted">Loading your registrations...</div>
+            } @else if (registrationsError) {
+              <div class="alert alert-danger">{{ registrationsError }}</div>
+            } @else if (!myRegistrations.length) {
+              <div class="text-center text-muted">No registrations yet.</div>
+            } @else {
+              <div class="row">
+                @for (registration of myRegistrations; track registration.event_id) {
+                  <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                      @if (registration.event?.image_url) {
+                        <img [src]="registration.event?.image_url" class="card-img-top" alt="Event image" style="height: 200px; object-fit: cover;">
+                      } @else {
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                          <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                      }
+                      <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ registration.event?.title }}</h5>
+                        <p class="card-text text-muted small">{{ registration.event?.date | date: 'medium' }} • {{ registration.event?.location }}</p>
+                        <p class="card-text flex-grow-1">{{ registration.event?.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                          <small class="text-muted">Registered on {{ registration.registered_at | date: 'medium' }}</small>
+                          @if (registration.event?.id) {
+                            <button type="button" class="btn btn-outline-info btn-sm" (click)="openChat(registration.event!.id)">
+                              Open chat
+                            </button>
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- Browse Events Section -->
+      @if (activeSection === 'browse') {
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+              <h2 class="h5 mb-1">Browse events</h2>
+              <p class="text-muted mb-0 small">Discover and register for upcoming events.</p>
+            </div>
+            <button type="button" class="btn btn-outline-primary btn-sm" (click)="loadAvailableEvents()">Refresh</button>
+          </div>
+          <div class="card-body">
+            <!-- Filtri e ricerca -->
+            <div class="row g-3 mb-4 p-3 bg-light rounded">
+              <div class="col-md-6">
+                <input
+                  type="text"
+                  class="form-control"
+                  [(ngModel)]="searchQuery"
+                  (input)="onSearch()"
+                  placeholder="Search events...">
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" [(ngModel)]="selectedCategory" (change)="onFilterChange()">
+                  <option value="">All categories</option>
+                  @for (category of categories; track category) {
+                    <option [value]="category">{{ category }}</option>
+                  }
+                </select>
+              </div>
+              <div class="col-md-3">
+                <select class="form-select" [(ngModel)]="selectedStatus" (change)="onFilterChange()">
+                  <option value="">All statuses</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="PENDING">Pending</option>
+                </select>
               </div>
             </div>
-            <div class="actions">
-              @if (!isRegisteredForEvent(event.id)) {
-                <button 
-                  type="button" 
-                  class="btn-primary"
-                  (click)="registerForEvent(event)"
-                  [disabled]="event.status !== 'APPROVED'">
-                  Register
-                </button>
-              } @else {
-                <span class="registered-badge">Registered</span>
-              }
-              <button type="button" class="link-button" (click)="openChat(event.id)">
-                View chat
-              </button>
-            </div>
-          </article>
-        }
-      </div>
-    }
-  </section>
+
+            @if (availableEventsLoading) {
+              <div class="text-center text-muted">Loading events...</div>
+            } @else if (availableEventsError) {
+              <div class="alert alert-danger">{{ availableEventsError }}</div>
+            } @else if (!availableEvents.length) {
+              <div class="text-center text-muted">No events found.</div>
+            } @else {
+              <div class="row">
+                @for (event of availableEvents; track event.id) {
+                  <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                      @if (event.image_url) {
+                        <img [src]="event.image_url" class="card-img-top" alt="Event image" style="height: 200px; object-fit: cover;">
+                      } @else {
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                          <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        </div>
+                      }
+                      <div class="card-body d-flex flex-column">
+                        <h5 class="card-title">{{ event.title }}</h5>
+                        <p class="card-text text-muted small">
+                          {{ event.date | date: 'medium' }} • {{ event.location }} • {{ event.category }}
+                        </p>
+                        <p class="card-text flex-grow-1">{{ event.description }}</p>
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                          <div>
+                            <small class="text-muted d-block">Capacity: {{ event.capacity || 'Unlimited' }}</small>
+                            <span class="badge" [class]="event.status.toLowerCase() === 'approved' ? 'bg-success' : event.status.toLowerCase() === 'pending' ? 'bg-warning' : 'bg-secondary'">
+                              {{ event.status }}
+                            </span>
+                          </div>
+                          <div class="btn-group btn-group-sm">
+                            @if (!isRegisteredForEvent(event.id)) {
+                              <button
+                                type="button"
+                                class="btn btn-primary"
+                                (click)="registerForEvent(event)"
+                                [disabled]="event.status !== 'APPROVED'">
+                                Register
+                              </button>
+                            } @else {
+                              <span class="badge bg-success">Registered</span>
+                            }
+                            <button type="button" class="btn btn-outline-info" (click)="openChat(event.id)">
+                              Chat
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  </div>
 </div>
