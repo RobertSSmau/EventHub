@@ -41,6 +41,15 @@ export class UserDashboard implements OnInit {
   createSuccess = '';
   createLoading = false;
 
+  // Eventi disponibili con ricerca e filtri
+  availableEvents: Event[] = [];
+  availableEventsLoading = false;
+  availableEventsError = '';
+  searchQuery = '';
+  selectedCategory = '';
+  selectedStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | '' = '';
+  categories: string[] = ['Tech', 'Business', 'Art', 'Sports', 'Education', 'Other'];
+
   constructor(
     private eventService: EventService,
     private registrationService: RegistrationService,
@@ -51,6 +60,7 @@ export class UserDashboard implements OnInit {
   ngOnInit(): void {
     this.loadMyEvents();
     this.loadRegistrations();
+    this.loadAvailableEvents();
   }
 
   loadMyEvents(): void {
@@ -83,6 +93,53 @@ export class UserDashboard implements OnInit {
         this.registrationsLoading = false;
       }
     });
+  }
+
+  loadAvailableEvents(): void {
+    this.availableEventsLoading = true;
+    this.availableEventsError = '';
+    
+    const filters: any = {};
+    if (this.selectedStatus) filters.status = this.selectedStatus;
+    if (this.searchQuery.trim()) filters.search = this.searchQuery.trim();
+    if (this.selectedCategory) filters.category = this.selectedCategory;
+    
+    this.eventService.getEvents(filters).subscribe({
+      next: (events) => {
+        this.availableEvents = events;
+      },
+      error: (err) => {
+        this.availableEventsError = err.error?.message || 'Unable to load events';
+      },
+      complete: () => {
+        this.availableEventsLoading = false;
+      }
+    });
+  }
+
+  onSearch(): void {
+    this.loadAvailableEvents();
+  }
+
+  onFilterChange(): void {
+    this.loadAvailableEvents();
+  }
+
+  registerForEvent(event: Event): void {
+    this.registrationService.register(event.id).subscribe({
+      next: () => {
+        // Ricarica le registrazioni e gli eventi disponibili
+        this.loadRegistrations();
+        this.loadAvailableEvents();
+      },
+      error: (err: any) => {
+        this.availableEventsError = err.error?.message || 'Unable to register for event';
+      }
+    });
+  }
+
+  isRegisteredForEvent(eventId: number): boolean {
+    return this.myRegistrations.some(reg => reg.event_id === eventId);
   }
 
   submitEvent(): void {

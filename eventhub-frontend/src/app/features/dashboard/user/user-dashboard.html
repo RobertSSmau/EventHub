@@ -184,4 +184,81 @@
       </div>
     }
   </section>
+
+  <section class="panel">
+    <header>
+      <div>
+        <h2>Browse events</h2>
+        <p>Discover and register for upcoming events.</p>
+      </div>
+      <button type="button" class="link-button" (click)="loadAvailableEvents()">Refresh</button>
+    </header>
+
+    <!-- Filtri e ricerca -->
+    <div class="filters">
+      <div class="search-bar">
+        <input
+          type="text"
+          [(ngModel)]="searchQuery"
+          (input)="onSearch()"
+          placeholder="Search events..."
+          class="search-input">
+      </div>
+      <div class="filter-controls">
+        <select [(ngModel)]="selectedCategory" (change)="onFilterChange()" class="filter-select">
+          <option value="">All categories</option>
+          @for (category of categories; track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
+        <select [(ngModel)]="selectedStatus" (change)="onFilterChange()" class="filter-select">
+          <option value="">All statuses</option>
+          <option value="APPROVED">Approved</option>
+          <option value="PENDING">Pending</option>
+        </select>
+      </div>
+    </div>
+
+    @if (availableEventsLoading) {
+      <div class="state">Loading events...</div>
+    } @else if (availableEventsError) {
+      <div class="error-message">{{ availableEventsError }}</div>
+    } @else if (!availableEvents.length) {
+      <div class="state">No events found.</div>
+    } @else {
+      <div class="list">
+        @for (event of availableEvents; track event.id) {
+          <article>
+            <div class="event-info">
+              <h3>{{ event.title }}</h3>
+              <p class="event-meta">
+                {{ event.date | date: 'medium' }} • {{ event.location }} • {{ event.category }}
+              </p>
+              <p class="event-description">{{ event.description }}</p>
+              <div class="event-stats">
+                <span>Capacity: {{ event.capacity || 'Unlimited' }}</span>
+                <span class="status" [class]="event.status.toLowerCase()">{{ event.status }}</span>
+              </div>
+            </div>
+            <div class="actions">
+              @if (!isRegisteredForEvent(event.id)) {
+                <button 
+                  type="button" 
+                  class="btn-primary"
+                  (click)="registerForEvent(event)"
+                  [disabled]="event.status !== 'APPROVED'">
+                  Register
+                </button>
+              } @else {
+                <span class="registered-badge">Registered</span>
+              }
+              <button type="button" class="link-button" (click)="openChat(event.id)">
+                View chat
+              </button>
+            </div>
+          </article>
+        }
+      </div>
+    }
+  </section>
 </div>

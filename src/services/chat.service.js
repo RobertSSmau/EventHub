@@ -6,7 +6,7 @@
 import Conversation from '../models/chat/conversation.model.js';
 import Message from '../models/chat/message.model.js';
 import { enrichMessages, enrichConversations } from '../dto/chat.dto.js';
-import { Event } from '../models/index.js';
+import { Event, Registration } from '../models/index.js';
 import { getIO } from '../config/socket.js';
 
 /**
@@ -49,14 +49,50 @@ export async function createEventGroupConversation(userId, eventId) {
     throw new Error('Event not found');
   }
 
-  // Get or create conversation
-  let conversation = await Conversation.findOrCreateEventGroup(
-    parseInt(eventId),
-    event.title
-  );
+  // Get all registered users for this event
+  const registrations = await Registration.findAll({
+    where: { event_id: eventId },
+    attributes: ['user_id'],
+  });
 
-  // Add user as participant if not already
-  await conversation.addParticipant(userId);
+  // Extract user IDs and ensure current user is included
+  const participantIds = registrations.map(reg => reg.user_id);
+  if (!participantIds.includes(userId)) {
+    participantIds.push(userId);
+  }
+
+  // Need at least 2 participants for a conversation
+  if (participantIds.length < 2) {
+    throw new Error('Cannot create event chat: not enough participants');
+  }
+
+  // Get or create conversation
+  let conversation = await Conversation.findOne({
+    type: 'event_group',
+    eventId: parseInt(eventId),
+  });
+
+  if (!conversation) {
+    conversation = await Conversation.create({
+      type: 'event_group',
+      eventId: parseInt(eventId),
+      name: event.title,
+      participants: participantIds,
+    });
+  } else {
+    // Update participants list if needed
+    const currentParticipants = new Set(conversation.participants);
+    const newParticipants = participantIds.filter(id => !currentParticipants.has(id));
+    
+    if (newParticipants.length > 0) {
+      conversation.participants.push(...newParticipants);
+      // Initialize unread count for new participants
+      newParticipants.forEach(userId => {
+        conversation.unreadCount.set(userId.toString(), 0);
+      });
+      await conversation.save();
+    }
+  }
 
   const [enriched] = await enrichConversations([conversation], userId);
   return enriched;
