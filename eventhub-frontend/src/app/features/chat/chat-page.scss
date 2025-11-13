@@ -20,6 +20,29 @@
   margin-bottom: 1rem;
 }
 
+.sidebar header .back-btn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  transition: color 0.2s;
+}
+
+.sidebar header .back-btn:hover {
+  color: #2563eb;
+}
+
+.sidebar header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
 .sidebar input {
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.15);

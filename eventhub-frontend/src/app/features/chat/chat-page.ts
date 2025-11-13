@@ -342,6 +342,10 @@ export class ChatPage implements OnInit, OnDestroy {
     });
   }
 
+  goBack(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
   private scrollMessagesToBottom(): void {
     queueMicrotask(() => {
       if (this.messageList) {
