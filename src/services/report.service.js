@@ -22,8 +22,8 @@ export async function createReport(userId, reportData) {
   // Check if user already reported this event
   const existingReport = await Report.findOne({
     where: {
-      event_id,
-      reported_by: userId,
+      reported_event_id: event_id,
+      reporter_id: userId,
     },
   });
 
@@ -32,18 +32,18 @@ export async function createReport(userId, reportData) {
   }
 
   const report = await Report.create({
-    event_id,
-    reported_by: userId,
+    reported_event_id: event_id,
+    reporter_id: userId,
     reason,
     description,
-    status: 'pending',
+    status: 'PENDING',
   });
 
   // Fetch full report details for notification
   const fullReport = await Report.findByPk(report.id, {
     include: [
       { model: User, as: 'reporter', attributes: ['id', 'username', 'email'] },
-      { model: Event, as: 'event', attributes: ['id', 'title', 'event_date', 'location'] },
+      { model: Event, as: 'reportedEvent', attributes: ['id', 'title', 'event_date', 'location'] },
     ],
   });
 
@@ -66,10 +66,10 @@ export async function createReport(userId, reportData) {
           username: fullReport.reporter.username
         },
         event: {
-          id: fullReport.event.id,
-          title: fullReport.event.title,
-          event_date: fullReport.event.event_date,
-          location: fullReport.event.location
+          id: fullReport.reportedEvent.id,
+          title: fullReport.reportedEvent.title,
+          date: fullReport.reportedEvent.date,
+          location: fullReport.reportedEvent.location
         },
         createdAt: fullReport.created_at
       });
@@ -100,8 +100,8 @@ export async function getAllReports(filters = {}) {
     include: [
       {
         model: Event,
-        as: 'event',
-        attributes: ['id', 'title', 'event_date', 'location'],
+        as: 'reportedEvent',
+        attributes: ['id', 'title', 'date', 'location'],
       },
       {
         model: User,
@@ -110,7 +110,7 @@ export async function getAllReports(filters = {}) {
       },
       {
         model: User,
-        as: 'resolver',
+        as: 'reportedUser',
         attributes: ['id', 'username', 'email'],
         required: false,
       },
@@ -133,12 +133,12 @@ export async function getAllReports(filters = {}) {
  */
 export async function getUserReports(userId) {
   const reports = await Report.findAll({
-    where: { reported_by: userId },
+    where: { reporter_id: userId },
     include: [
       {
         model: Event,
-        as: 'event',
-        attributes: ['id', 'title', 'event_date', 'location'],
+        as: 'reportedEvent',
+        attributes: ['id', 'title', 'date', 'location'],
       },
     ],
     order: [['created_at', 'DESC']],

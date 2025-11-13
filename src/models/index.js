@@ -35,6 +35,7 @@ Event.hasMany(Report, { foreignKey: 'reported_event_id', as: 'eventReports' });
 Report.belongsTo(User, { foreignKey: 'reporter_id', as: 'reporter' });
 Report.belongsTo(User, { foreignKey: 'reported_user_id', as: 'reportedUser' });
 Report.belongsTo(Event, { foreignKey: 'reported_event_id', as: 'reportedEvent' });
+Report.belongsTo(User, { foreignKey: 'resolved_by', as: 'resolver' });
 
 // Database authentication
 await sequelize.authenticate();

@@ -23,6 +23,10 @@ export default (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       status: {
         type: DataTypes.STRING(20),
         defaultValue: 'PENDING',
@@ -33,6 +37,18 @@ export default (sequelize, DataTypes) => {
       created_at: {
         type: DataTypes.DATE,
         defaultValue: DataTypes.NOW,
+      },
+      resolved_by: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+      },
+      resolved_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      admin_notes: {
+        type: DataTypes.TEXT,
+        allowNull: true,
       },
     },
     {
