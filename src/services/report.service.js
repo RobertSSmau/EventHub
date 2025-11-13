@@ -11,28 +11,58 @@ import { getIO } from '../config/socket.js';
  * Create a new report
  */
 export async function createReport(userId, reportData) {
-  const { event_id, reason, description } = reportData;
+  const { reported_user_id, reported_event_id, reason, description } = reportData;
 
-  // Check if event exists
-  const event = await Event.findByPk(event_id);
-  if (!event) {
-    throw new Error('Event not found');
+  // Validate that exactly one target is specified
+  if ((!reported_user_id && !reported_event_id) || (reported_user_id && reported_event_id)) {
+    throw new Error('Must specify either reported_user_id or reported_event_id, not both');
   }
 
-  // Check if user already reported this event
-  const existingReport = await Report.findOne({
-    where: {
-      reported_event_id: event_id,
-      reporter_id: userId,
-    },
-  });
+  let targetUser = null;
+  let targetEvent = null;
+  let existingReport = null;
 
-  if (existingReport) {
-    throw new Error('You have already reported this event');
+  if (reported_event_id) {
+    // Check if event exists
+    targetEvent = await Event.findByPk(reported_event_id);
+    if (!targetEvent) {
+      throw new Error('Event not found');
+    }
+
+    // Check if user already reported this event
+    existingReport = await Report.findOne({
+      where: {
+        reported_event_id: reported_event_id,
+        reporter_id: userId,
+      },
+    });
+
+    if (existingReport) {
+      throw new Error('You have already reported this event');
+    }
+  } else if (reported_user_id) {
+    // Check if user exists
+    targetUser = await User.findByPk(reported_user_id);
+    if (!targetUser) {
+      throw new Error('User not found');
+    }
+
+    // Check if user already reported this user
+    existingReport = await Report.findOne({
+      where: {
+        reported_user_id: reported_user_id,
+        reporter_id: userId,
+      },
+    });
+
+    if (existingReport) {
+      throw new Error('You have already reported this user');
+    }
   }
 
   const report = await Report.create({
-    reported_event_id: event_id,
+    reported_user_id: reported_user_id || null,
+    reported_event_id: reported_event_id || null,
     reporter_id: userId,
     reason,
     description,
@@ -43,36 +73,46 @@ export async function createReport(userId, reportData) {
   const fullReport = await Report.findByPk(report.id, {
     include: [
       { model: User, as: 'reporter', attributes: ['id', 'username', 'email'] },
-      { model: Event, as: 'reportedEvent', attributes: ['id', 'title', 'event_date', 'location'] },
+      ...(reported_event_id ? [{ model: Event, as: 'reportedEvent', attributes: ['id', 'title', 'date', 'location'] }] : []),
     ],
   });
 
   // 🔔 REAL-TIME NOTIFICATION to all ADMIN users
   try {
     const io = getIO();
-    const adminUsers = await User.findAll({ 
+    const adminUsers = await User.findAll({
       where: { role: 'ADMIN' },
       attributes: ['id']
     });
 
+    const notificationData = {
+      reportId: fullReport.id,
+      reason: fullReport.reason,
+      description: fullReport.description,
+      reporter: {
+        id: fullReport.reporter.id,
+        username: fullReport.reporter.username
+      },
+      createdAt: fullReport.created_at
+    };
+
+    if (reported_user_id) {
+      notificationData.reportedUser = {
+        id: fullReport.reportedUser.id,
+        username: fullReport.reportedUser.username
+      };
+    } else {
+      notificationData.reportedEvent = {
+        id: fullReport.reportedEvent.id,
+        title: fullReport.reportedEvent.title,
+        date: fullReport.reportedEvent.event_date,
+        location: fullReport.reportedEvent.location
+      };
+    }
+
     // Emit to each admin's personal room
     adminUsers.forEach(admin => {
-      io.to(`user:${admin.id}`).emit('report:new', {
-        reportId: fullReport.id,
-        reason: fullReport.reason,
-        description: fullReport.description,
-        reporter: {
-          id: fullReport.reporter.id,
-          username: fullReport.reporter.username
-        },
-        event: {
-          id: fullReport.reportedEvent.id,
-          title: fullReport.reportedEvent.title,
-          date: fullReport.reportedEvent.date,
-          location: fullReport.reportedEvent.location
-        },
-        createdAt: fullReport.created_at
-      });
+      io.to(`user:${admin.id}`).emit('report:new', notificationData);
     });
 
     console.log(`📢 Notified ${adminUsers.length} admin(s) of new report #${report.id}`);
@@ -151,7 +191,7 @@ export async function getUserReports(userId) {
  * Update report status (admin only)
  */
 export async function updateReportStatus(adminId, reportId, status, adminNotes = null) {
-  const validStatuses = ['pending', 'reviewed', 'resolved', 'dismissed'];
+  const validStatuses = ['PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED'];
   
   if (!validStatuses.includes(status)) {
     throw new Error('Invalid status');

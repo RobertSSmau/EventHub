@@ -53,6 +53,9 @@
         </p>
       </div>
       <div class="actions">
+        <button class="link report-btn" (click)="openReportModal(activeConversation)">
+          Report
+        </button>
         <button class="link" (click)="loadMessages(activeConversation)">
           Refresh
         </button>
@@ -104,4 +107,78 @@
       <p>Select a conversation to start chatting.</p>
     </section>
   </ng-template>
+</div>
+
+<!-- Report Modal -->
+<div class="modal-overlay" *ngIf="showReportModal && selectedConversation" (click)="closeReportModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <header class="modal-header">
+      <h3>Report {{ reportTarget === 'event' ? 'Event' : 'User' }}</h3>
+      <button type="button" class="close-btn" (click)="closeReportModal()">×</button>
+    </header>
+
+    <div class="modal-body">
+      <div *ngIf="reportTarget === 'event'">
+        <div class="report-info">
+          <h4>Reporting Event: {{ selectedConversation.displayName }}</h4>
+          <p>You are about to report this event for violating community guidelines.</p>
+        </div>
+      </div>
+      <div *ngIf="reportTarget === 'user'">
+        <div class="report-info">
+          <h4>Select User to Report</h4>
+          <p>Choose which user you want to report from this conversation:</p>
+          <div class="user-list">
+            <label class="user-option" *ngFor="let user of selectedConversation.participantsInfo">
+              <input
+                type="radio"
+                name="reportedUser"
+                [value]="user.id"
+                [(ngModel)]="selectedUserId"
+                *ngIf="user.id !== currentUserId">
+              <span>{{ user.username }}</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <form class="report-form">
+        <label>
+          Reason *
+          <select [(ngModel)]="reportReason" name="reason" required>
+            <option value="">Select a reason</option>
+            <option value="spam">Spam</option>
+            <option value="harassment">Harassment</option>
+            <option value="inappropriate_content">Inappropriate Content</option>
+            <option value="fake_event">Fake Event</option>
+            <option value="scam">Scam</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label>
+          Description (optional)
+          <textarea
+            [(ngModel)]="reportDescription"
+            name="description"
+            rows="3"
+            placeholder="Provide additional details about the issue...">
+          </textarea>
+        </label>
+      </form>
+    </div>
+
+    <footer class="modal-footer">
+      <button type="button" class="btn-secondary" (click)="closeReportModal()">
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="btn-primary"
+        (click)="submitReport(selectedConversation)"
+        [disabled]="!reportReason || (reportTarget === 'user' && !selectedUserId)">
+        Submit Report
+      </button>
+    </footer>
+  </div>
 </div>

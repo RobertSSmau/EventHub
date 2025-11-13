@@ -7,6 +7,8 @@ import { ChatApiService } from '../../core/services/chat-api.service';
 import { SocketService, NewMessageEvent, TypingEvent, UserStatusEvent } from '../../core/services/socket';
 import { Conversation, Message, MessageType } from '../../shared/models/chat.model';
 import { AuthService } from '../../core/services/auth';
+import { ReportService } from '../../core/services/report.service';
+import { CreateReportRequest } from '../../shared/models/report.model';
 
 @Component({
   selector: 'app-chat-page',
@@ -34,6 +36,14 @@ export class ChatPage implements OnInit, OnDestroy {
   typingMap = new Map<string, Map<number, { username?: string; timer?: any }>>();
   onlineUserIds = new Set<number>();
 
+  // Report modal properties
+  showReportModal = false;
+  reportTarget: 'event' | 'user' | null = null;
+  reportReason = '';
+  reportDescription = '';
+  selectedUserId: number | null = null;
+  currentUserId: number | null = null;
+
   private subs: Subscription[] = [];
   private activeTypingTimeout?: any;
 
@@ -42,10 +52,12 @@ export class ChatPage implements OnInit, OnDestroy {
     private socketService: SocketService,
     private route: ActivatedRoute,
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private reportService: ReportService
   ) {}
 
   ngOnInit(): void {
+    this.currentUserId = this.authService.currentUser?.id || null;
     this.socketService.connect();
     this.loadConversations();
     this.registerRealtimeHandlers();
@@ -344,6 +356,58 @@ export class ChatPage implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  openReportModal(conversation: Conversation): void {
+    this.showReportModal = true;
+    this.reportTarget = conversation.type === 'event_group' ? 'event' : 'user';
+    this.reportReason = '';
+    this.reportDescription = '';
+    this.selectedUserId = null;
+  }
+
+  closeReportModal(): void {
+    this.showReportModal = false;
+    this.reportTarget = null;
+    this.reportReason = '';
+    this.reportDescription = '';
+    this.selectedUserId = null;
+  }
+
+  selectUserToReport(userId: number): void {
+    this.selectedUserId = userId;
+  }
+
+  submitReport(conversation: Conversation): void {
+    if (!this.reportReason.trim()) return;
+
+    const reportData: CreateReportRequest = {
+      reason: this.reportReason,
+    };
+
+    if (this.reportDescription?.trim()) {
+      reportData.description = this.reportDescription.trim();
+    }
+
+    if (this.reportTarget === 'event' && conversation.eventId) {
+      reportData.reported_event_id = conversation.eventId;
+    } else if (this.reportTarget === 'user' && this.selectedUserId) {
+      reportData.reported_user_id = this.selectedUserId;
+    } else {
+      console.error('Invalid report data: missing target ID');
+      return;
+    }
+
+    this.reportService.createReport(reportData).subscribe({
+      next: () => {
+        this.closeReportModal();
+        // Could show a success message here
+      },
+      error: (err) => {
+        console.error('Failed to submit report:', err);
+        // Could show an error message here
+      }
+    });
   }
 
   private scrollMessagesToBottom(): void {

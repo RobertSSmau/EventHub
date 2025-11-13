@@ -45,8 +45,12 @@ const router = Router();
  *                 description: ID of reported event (mutually exclusive with reported_user_id)
  *               reason:
  *                 type: string
- *                 minLength: 10
+ *                 minLength: 3
  *                 example: This user is posting spam content
+ *               description:
+ *                 type: string
+ *                 maxLength: 1000
+ *                 description: Optional detailed description of the report
  *     responses:
  *       201:
  *         description: Report created successfully
@@ -63,7 +67,8 @@ router.post(
     body: Joi.object({
       reported_user_id: Joi.number().integer().positive(),
       reported_event_id: Joi.number().integer().positive(),
-      reason: Joi.string().min(10).max(1000).required(),
+      reason: Joi.string().min(3).max(1000).required(),
+      description: Joi.string().max(1000).optional(),
     })
       .xor('reported_user_id', 'reported_event_id')
       .messages({

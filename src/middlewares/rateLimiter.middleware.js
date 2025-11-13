@@ -37,10 +37,10 @@ export const authLimiter = rateLimit({
   store: createRedisStore('rl:auth:'),
 });
 
-// Report creation limiter (3 reports per hour per user)
+// Report creation limiter (10 reports per hour per user for testing)
 export const reportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 10,
   message: 'Too many reports submitted, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
