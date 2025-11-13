@@ -51,7 +51,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   dateFrom = '';
   dateTo = '';
   selectedCategory = '';
-  selectedStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | '' = '';
+  selectedStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | '' = 'APPROVED';
   categories: string[] = ['Tech', 'Business', 'Art', 'Sports', 'Education', 'Other'];
 
   activeSection: 'create' | 'my-events' | 'registrations' | 'browse' = 'my-events';
