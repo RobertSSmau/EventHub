@@ -15,7 +15,7 @@ export const routes: Routes = [
   { path: 'login', component: Login },
   { path: 'register', component: Register },
   { path: 'auth/callback', component: AuthCallback },
-  { path: 'verify-email/:token', component: VerifyEmail },
+  { path: 'auth/verify-email/:token', component: VerifyEmail },
   { 
     path: 'events', 
     component: EventList

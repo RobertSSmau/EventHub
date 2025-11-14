@@ -82,23 +82,40 @@ export async function logout(req, res) {
 // Verify email with token
 export async function verifyEmail(req, res) {
   const { token } = req.params;
+  console.log(`Verifica email con token: ${token}`);
   
   const email = await verifyEmailToken(token);
   if (!email) {
+    console.error(`Token non valido o scaduto: ${token}`);
     return res.status(400).json({ message: 'Invalid or expired verification token' });
   }
   
   const user = await User.findOne({ where: { email } });
   if (!user) {
+    console.error(`Utente non trovato: ${email}`);
     return res.status(404).json({ message: 'User not found' });
   }
   
   if (user.email_verified) {
+    console.warn(`Email già verificata: ${email}`);
     return res.status(400).json({ message: 'Email already verified' });
   }
   
   await user.update({ email_verified: true });
-    res.json({ message: 'Email verified successfully. You can now log in.' });
+  console.log(`Email verificata: ${email}`);
+  
+  // Generate token for auto-login
+  const token_jwt = generateToken(user);
+  res.json({ 
+    message: 'Email verified successfully. You can now log in.',
+    token: token_jwt,
+    user: {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role
+    }
+  });
 }
 
 // Reset password with token

@@ -15,7 +15,7 @@ export async function initEmail() {
     
     sgMail.setApiKey(sendgridKey);
     emailService = { type: 'sendgrid', sgMail };
-    console.log('📧 SendGrid configurato correttamente');
+    console.log('SendGrid configurato correttamente');
     return emailService;
   } catch (error) {
     console.error('Errore configurazione SendGrid:', error.message);
@@ -57,10 +57,10 @@ export async function sendVerificationEmail(email, token) {
       html: htmlContent
     });
     
-    console.log('📧 Email verifica inviata a:', email);
+    console.log('Email verifica inviata a:', email);
     return { success: true };
   } catch (error) {
-    console.error('❌ Errore invio email verifica:', error.message);
+    console.error('Errore invio email verifica:', error.message);
     return null;
   }
 }

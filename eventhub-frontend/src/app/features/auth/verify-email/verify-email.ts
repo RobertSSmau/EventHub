@@ -29,17 +29,30 @@ export class VerifyEmail implements OnInit {
     }
 
     this.authService.verifyEmail(token).subscribe({
-      next: (response) => {
-        console.log('Email verificata:', response);
+      next: (response: any) => {
+        console.log('✅ Email verificata:', response);
         this.status = 'success';
         this.message = response.message;
-        // Redirect to login after 3 seconds
-        setTimeout(() => {
-          this.router.navigate(['/login']);
-        }, 3000);
+        
+        // Auto-login: save token and user to localStorage
+        if (response.token && response.user) {
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('user', JSON.stringify(response.user));
+          console.log('🔐 Token salvato, redirecting to dashboard...');
+          
+          // Redirect to dashboard after 2 seconds
+          setTimeout(() => {
+            this.router.navigate(['/dashboard']);
+          }, 2000);
+        } else {
+          // Fallback to login if no token
+          setTimeout(() => {
+            this.router.navigate(['/login']);
+          }, 3000);
+        }
       },
       error: (error) => {
-        console.error('Errore verifica:', error);
+        console.error('❌ Errore verifica:', error);
         this.status = 'error';
         this.message = error.error?.message || 'Verification failed';
       }
