@@ -1,5 +1,9 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/eventhub-frontend",
-  "installCommand": "npm install"
+  "framework": "angular",
+  "buildCommand": "npm run build && mv dist/eventhub-frontend dist",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
