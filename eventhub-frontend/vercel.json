@@ -1,8 +1,0 @@
-{
-  "buildCommand": "npm run build -- --configuration production",
-  "outputDirectory": "dist/eventhub-frontend/browser",
-  "installCommand": "npm install",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
-}
