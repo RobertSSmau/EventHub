@@ -14,11 +14,17 @@ import {
   verifyEmail, 
   resendVerification, 
   forgotPassword, 
-  resetPassword 
+  resetPassword,
+  googleAuth,
+  googleAuthCallback,
+  googleAuthSuccess,
+  googleAuthFailure,
+  getOAuthData
 } from '../controllers/auth.controller.js';
 import { verifyToken } from '../middlewares/auth.middleware.js';
 import { PASSWORD_REGEX, VALIDATION_MESSAGES } from '../utils/validation.js';
 import { authLimiter, logoutLimiter, emailLimiter } from '../middlewares/rateLimiter.middleware.js';
+import passport from '../config/passport.js';
 
 const router = Router();
 
@@ -358,6 +364,56 @@ router.post('/reset-rate-limits', async (req, res) => {
     });
   }
 });
+
+/**
+ * @openapi
+ * /auth/google:
+ *   get:
+ *     summary: Initiate Google OAuth login
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirects to Google for authentication
+ */
+router.get('/google', (req, res, next) => {
+  console.log('Google OAuth route called');
+  next();
+}, passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+/**
+ * @openapi
+ * /auth/google/callback:
+ *   get:
+ *     summary: Handle Google OAuth callback
+ *     tags: [Auth]
+ *     responses:
+ *       302:
+ *         description: Redirects to success or failure page
+ */
+router.get('/google/callback',
+  (req, res, next) => {
+    console.log('Google OAuth callback route called');
+    next();
+  },
+  passport.authenticate('google', { failureRedirect: '/api/auth/google/failure' }),
+  googleAuthSuccess  // Call googleAuthSuccess directly to preserve req.user from Passport
+);
+
+
+
+/**
+ * @openapi
+ * /auth/google/failure:
+ *   get:
+ *     summary: Handle Google OAuth failure
+ *     tags: [Auth]
+ *     responses:
+ *       401:
+ *         description: Authentication failed
+ */
+router.get('/google/failure', googleAuthFailure);
+
+router.get('/oauth-data/:session', getOAuthData);
 
 router.use(errors());
 

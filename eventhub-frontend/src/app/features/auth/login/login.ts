@@ -103,4 +103,8 @@ export class Login {
       }
     });
   }
+
+  loginWithGoogle(): void {
+    this.authService.loginWithGoogle();
+  }
 }

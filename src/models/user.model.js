@@ -22,7 +22,7 @@ export default (sequelize, DataTypes) => {
       },
       password_hash: {
         type: DataTypes.STRING(255),
-        allowNull: false,
+        allowNull: true, // Allow null for OAuth users
       },
       role: {
         type: DataTypes.ENUM('USER', 'ADMIN'),
@@ -35,6 +35,15 @@ export default (sequelize, DataTypes) => {
       email_verified: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
+      },
+      google_id: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        unique: true,
+      },
+      provider: {
+        type: DataTypes.ENUM('local', 'google'),
+        defaultValue: 'local',
       },
       created_at: {
         type: DataTypes.DATE,

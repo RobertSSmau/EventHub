@@ -1,0 +1,48 @@
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-white">
+  <div class="card shadow-sm border" style="max-width: 400px; width: 100%;">
+    <div class="card-body p-4 text-center">
+      
+      @if (status === 'loading') {
+        <div class="spinner-border text-primary mb-3" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h4>Completing sign in...</h4>
+        <p class="text-muted">Processing your Google authentication</p>
+        <p class="text-muted small mt-3">If this takes more than 10 seconds, please refresh and try again.</p>
+      }
+      
+      @if (status === 'success') {
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-success mb-3">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <h4 class="text-success mb-3">Sign in successful!</h4>
+        <p class="text-muted">Redirecting to your dashboard...</p>
+      }
+      
+      @if (status === 'error') {
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-danger mb-3">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <h4 class="text-danger mb-3">Authentication failed</h4>
+        @if (errorMessage) {
+          <p class="text-danger small mb-3">{{ errorMessage }}</p>
+        }
+        <p class="text-muted">Redirecting to login page...</p>
+      }
+      
+      <!-- Debug info (remove in production) -->
+      <div class="mt-4 text-start small text-muted border-top pt-3">
+        <strong>Debug Info:</strong><br>
+        URL: {{ currentUrl }}<br>
+        Session: {{ hasSession ? 'Present' : 'Missing' }}<br>
+        Status: {{ status }}<br>
+        @if (errorMessage) {
+          Error: {{ errorMessage }}
+        }
+      </div>
+    </div>
+  </div>
+</div>

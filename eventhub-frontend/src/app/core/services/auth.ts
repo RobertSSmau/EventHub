@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, catchError, finalize, map, of, tap } from 'rxjs';
 import { ApiService } from './api';
 import { User, LoginRequest, RegisterRequest, AuthResponse } from '../../shared/models/user.model';
+import { environment } from '../../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
@@ -67,6 +68,10 @@ export class AuthService {
 
   getPasswordRequirements(): Observable<{ requirements: string[]; pattern: string }> {
     return this.api.get<{ requirements: string[]; pattern: string }>('/auth/password-requirements');
+  }
+
+  loginWithGoogle(): void {
+    window.location.href = `${environment.apiUrl}/auth/google`;
   }
 
   getToken(): string | null {

@@ -78,9 +78,10 @@ export class Register implements OnInit {
     this.authService.register(this.credentials).subscribe({
       next: () => {
         this.success = true;
-        setTimeout(() => {
-          this.router.navigate(['/dashboard']);
-        }, 1500);
+        // Non reindirizzare automaticamente - l'utente deve verificare l'email
+        // setTimeout(() => {
+        //   this.router.navigate(['/dashboard']);
+        // }, 1500);
       },
       error: (err) => {
         this.error = err.error?.message || 'Registration failed';

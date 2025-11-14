@@ -10,6 +10,14 @@ import { setupSwagger } from './config/swagger.js';
 import { generalLimiter } from './middlewares/rateLimiter.middleware.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import passport from './config/passport.js';
+import session from 'express-session';
+
+// DEBUG: Log environment at startup
+console.log('🔍 Environment at startup:');
+console.log('  FRONTEND_URL:', process.env.FRONTEND_URL);
+console.log('  NODE_ENV:', process.env.NODE_ENV);
+console.log('  PORT:', process.env.PORT);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -27,10 +35,34 @@ app.use(helmet({
     },
   },
 }));
-app.use(cors());
+
+// CORS configuration with credentials support
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(compression());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Session middleware (required for Passport OAuth)
+app.use(session({
+  secret: process.env.JWT_SECRET || 'fallback-secret-for-sessions',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax', // Critico per OAuth redirect
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Serve static files (for test client)
 app.use(express.static(path.join(__dirname, '..')));

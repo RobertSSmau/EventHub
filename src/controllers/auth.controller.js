@@ -1,9 +1,11 @@
-import argon2 from 'argon2';
 import { User } from '../models/index.js';
+import argon2 from 'argon2';
 import { generateToken } from '../utils/token.js';
-import { addToBlacklist } from '../utils/tokenBlacklist.js';
+import { createVerificationToken, verifyEmailToken } from '../utils/emailTokens.js';
+import { createPasswordResetToken, verifyResetToken } from '../utils/emailTokens.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../config/email.js';
-import { createVerificationToken, verifyEmailToken, createPasswordResetToken, verifyResetToken } from '../utils/emailTokens.js';
+import { addToBlacklist } from '../utils/tokenBlacklist.js';
+import { getRedisClient } from '../config/redis.js';
 
 export async function register(req, res) {
   const { username, email, password } = req.body;
@@ -17,16 +19,16 @@ export async function register(req, res) {
     username, 
     email, 
     password_hash,
-    email_verified: true  // ⬅️ TEMP: Auto-verify for development
+    email_verified: false  // Require email verification
   });
 
   // Generate verification token and send email
-  // const verificationToken = await createVerificationToken(email);
-  // await sendVerificationEmail(email, verificationToken);
+  const verificationToken = await createVerificationToken(email);
+  await sendVerificationEmail(email, verificationToken);
 
   const token = generateToken(newUser);
   res.status(201).json({ 
-    message: 'User registered successfully.', // ⬅️ TEMP: without email verification
+    message: 'User registered successfully. Please check your email to verify your account.',
     token,
     user: {
       id: newUser.id,
@@ -46,9 +48,8 @@ export async function login(req, res) {
   if (user.is_blocked)
     return res.status(403).json({ message: 'User account is blocked' });
 
-  // ⬅️ TEMP: Email verification disabled for development
-  // if (!user.email_verified)
-  //   return res.status(403).json({ message: 'Please verify your email before logging in' });
+  if (!user.email_verified)
+    return res.status(403).json({ message: 'Please verify your email before logging in' });
 
   const valid = await argon2.verify(user.password_hash, password);
   if (!valid) return res.status(401).json({ message: 'Invalid password' });
@@ -157,4 +158,107 @@ export async function resetPassword(req, res) {
   await user.update({ password_hash });
   
   res.json({ message: 'Password reset successful. You can now log in.' });
+}
+
+/**
+ * @desc Initiate Google OAuth login
+ * @route GET /api/auth/google
+ */
+export async function googleAuth(req, res, next) {
+  // This will be handled by Passport
+}
+
+/**
+ * @desc Handle Google OAuth callback and login
+ * @route GET /api/auth/google/callback (after Passport authentication)
+ * Called directly after Passport verification to preserve req.user
+ */
+export async function googleAuthCallback(req, res, next) {
+  // Deprecated: use googleAuthSuccess instead which is called directly
+  next();
+}
+
+/**
+ * @desc Handle successful Google OAuth authentication
+ * @route GET /api/auth/google/success
+ */
+export async function googleAuthSuccess(req, res) {
+  if (!req.user) {
+    console.error('No user found in req.user after OAuth callback');
+    return res.status(401).json({ message: 'Authentication failed' });
+  }
+
+  try {
+    const token = generateToken(req.user);
+    const redis = getRedisClient();
+    
+    // Generate a temporary session ID
+    const sessionId = `oauth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Store auth data temporarily in Redis (expires in 5 minutes)
+    const authData = {
+      token,
+      user: {
+        id: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        role: req.user.role,
+        provider: req.user.provider
+      }
+    };
+    
+    console.log('Storing OAuth data in Redis with sessionId:', sessionId);
+    await redis.setex(sessionId, 300, JSON.stringify(authData)); // 5 minutes expiry
+    console.log('OAuth data stored successfully in Redis');
+    
+    // Redirect to frontend with session ID
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:4200';
+    const redirectUrl = `${frontendUrl}/auth/callback?session=${sessionId}`;
+    
+    console.log('OAuth success - redirecting to:', redirectUrl);
+    return res.redirect(redirectUrl);
+  } catch (error) {
+    console.error('OAuth success handler error:', error);
+    return res.status(500).json({ message: 'Authentication process failed', error: error.message });
+  }
+}
+
+/**
+ * @desc Handle failed Google OAuth authentication
+ * @route GET /api/auth/google/failure
+ */
+export async function getOAuthData(req, res) {
+  const { session } = req.params;
+  console.log('getOAuthData called with session:', session);
+  
+  const redis = getRedisClient();
+  
+  try {
+    const authDataStr = await redis.get(session);
+    console.log('Redis data retrieved:', authDataStr ? 'found' : 'not found');
+    
+    if (!authDataStr) {
+      console.log('Session not found or expired');
+      return res.status(404).json({ message: 'Session expired or invalid' });
+    }
+    
+    // Delete the session data after use (one-time use)
+    await redis.del(session);
+    console.log('Session data deleted from Redis');
+    
+    const authData = JSON.parse(authDataStr);
+    console.log('Auth data parsed successfully');
+    res.json(authData);
+  } catch (error) {
+    console.error('Redis error in getOAuthData:', error);
+    res.status(500).json({ message: 'Failed to retrieve authentication data' });
+  }
+}
+
+/**
+ * @desc Handle failed Google OAuth authentication
+ * @route GET /api/auth/google/failure
+ */
+export async function googleAuthFailure(req, res) {
+  res.status(401).json({ message: 'Google authentication failed' });
 }
