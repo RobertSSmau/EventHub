@@ -9,6 +9,7 @@ import { AuthService } from '../../../core/services/auth';
 import {
   CreateEventRequest,
   Event,
+  EventListResponse,
   EventParticipant,
 } from '../../../shared/models/event.model';
 import { Registration } from '../../../shared/models/registration.model';
@@ -46,6 +47,11 @@ export class UserDashboard implements OnInit, OnDestroy {
   availableEvents: Event[] = [];
   availableEventsLoading = false;
   availableEventsError = '';
+  availableEventsPagination = {
+    total: 0,
+    limit: 10,
+    offset: 0,
+  };
   searchQuery = '';
   searchType: 'title' | 'category' | 'location' | 'dateRange' = 'title';
   dateFrom = '';
@@ -147,9 +153,14 @@ export class UserDashboard implements OnInit, OnDestroy {
     if (this.dateFrom) filters.dateFrom = this.dateFrom;
     if (this.dateTo) filters.dateTo = this.dateTo;
     
+    // Paginazione
+    filters.limit = this.availableEventsPagination.limit;
+    filters.offset = this.availableEventsPagination.offset;
+    
     this.eventService.getEvents(filters).subscribe({
-      next: (events) => {
-        this.availableEvents = events;
+      next: (response: EventListResponse) => {
+        this.availableEvents = response.events;
+        this.availableEventsPagination = response.pagination;
       },
       error: (err) => {
         this.availableEventsError = err.error?.message || 'Unable to load events';
@@ -296,6 +307,38 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.authService.logout().subscribe(() => {
       this.router.navigate(['/login']);
     });
+  }
+
+  get availableEventsCurrentPage(): number {
+    return Math.floor(this.availableEventsPagination.offset / this.availableEventsPagination.limit) + 1;
+  }
+
+  get availableEventsTotalPages(): number {
+    return Math.ceil(this.availableEventsPagination.total / this.availableEventsPagination.limit);
+  }
+
+  goToAvailableEventsPage(page: number): void {
+    if (page < 1 || page > this.availableEventsTotalPages) return;
+    this.availableEventsPagination.offset = (page - 1) * this.availableEventsPagination.limit;
+    this.loadAvailableEvents();
+  }
+
+  nextAvailableEventsPage(): void {
+    if (this.availableEventsCurrentPage < this.availableEventsTotalPages) {
+      this.goToAvailableEventsPage(this.availableEventsCurrentPage + 1);
+    }
+  }
+
+  previousAvailableEventsPage(): void {
+    if (this.availableEventsCurrentPage > 1) {
+      this.goToAvailableEventsPage(this.availableEventsCurrentPage - 1);
+    }
+  }
+
+  changeAvailableEventsPageSize(newLimit: number): void {
+    this.availableEventsPagination.limit = newLimit;
+    this.availableEventsPagination.offset = 0;
+    this.loadAvailableEvents();
   }
 
   ngOnDestroy(): void {

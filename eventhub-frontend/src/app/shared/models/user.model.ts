@@ -25,3 +25,17 @@ export interface AuthResponse {
   user: User;
   message?: string;
 }
+
+export interface UserFilters {
+  limit?: number;
+  offset?: number;
+}
+
+export interface UserListResponse {
+  users: User[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}

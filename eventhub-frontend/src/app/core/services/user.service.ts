@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { ApiService } from './api';
-import { User } from '../../shared/models/user.model';
+import { User, UserFilters, UserListResponse } from '../../shared/models/user.model';
 
 @Injectable({
   providedIn: 'root',
@@ -9,8 +9,8 @@ import { User } from '../../shared/models/user.model';
 export class UserService {
   constructor(private api: ApiService) {}
 
-  getAllUsers(): Observable<User[]> {
-    return this.api.get<User[]>('/users');
+  getAllUsers(filters?: UserFilters): Observable<UserListResponse> {
+    return this.api.get<UserListResponse>('/users', filters);
   }
 
   blockUser(userId: number): Observable<{ message: string }> {

@@ -2,14 +2,27 @@ import { User } from '../models/index.js';
 
 /**
  * GET /api/users
- * Shows all users as admin
+ * Shows all users as admin with pagination
  */
 export async function getAllUsers(req, res) {
-  const users = await User.findAll({
+  const { limit = 10, offset = 0 } = req.query;
+
+  const { count, rows } = await User.findAndCountAll({
     attributes: ['id', 'username', 'email', 'role', 'is_blocked', 'created_at'],
+    where: { role: { [require('sequelize').Op.ne]: 'ADMIN' } }, // Exclude admins
+    limit: parseInt(limit),
+    offset: parseInt(offset),
     order: [['created_at', 'DESC']],
   });
-  res.json(users);
+
+  res.json({
+    users: rows,
+    pagination: {
+      total: count,
+      limit: parseInt(limit),
+      offset: parseInt(offset),
+    },
+  });
 }
 
 /**

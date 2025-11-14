@@ -39,6 +39,15 @@ export interface EventFilters {
   offset?: number;
 }
 
+export interface EventListResponse {
+  events: Event[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
+}
+
 export interface EventParticipant {
   id: number;
   username: string;

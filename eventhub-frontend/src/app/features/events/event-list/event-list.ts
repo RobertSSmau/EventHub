@@ -5,7 +5,7 @@ import { Subscription } from 'rxjs';
 import { EventService } from '../../../core/services/event.service';
 import { RegistrationService } from '../../../core/services/registration.service';
 import { AuthService } from '../../../core/services/auth';
-import { Event } from '../../../shared/models/event.model';
+import { Event, EventListResponse } from '../../../shared/models/event.model';
 
 @Component({
   selector: 'app-event-list',
@@ -20,6 +20,11 @@ export class EventList implements OnInit, OnDestroy {
   registeringIds = new Set<number>();
   registeredEventIds = new Set<number>();
   successMessage = '';
+  pagination = {
+    total: 0,
+    limit: 12,
+    offset: 0,
+  };
   private authSub?: Subscription;
 
   constructor(
@@ -54,9 +59,14 @@ export class EventList implements OnInit, OnDestroy {
   private loadEvents(): void {
     this.loading = true;
     this.error = '';
-    this.eventService.getEvents({ status: 'APPROVED', limit: 50 }).subscribe({
-      next: (events) => {
-        this.events = events;
+    this.eventService.getEvents({ 
+      status: 'APPROVED', 
+      limit: this.pagination.limit,
+      offset: this.pagination.offset
+    }).subscribe({
+      next: (response: EventListResponse) => {
+        this.events = response.events;
+        this.pagination = response.pagination;
       },
       error: (err) => {
         this.error = err.error?.message || 'Unable to load events';
@@ -124,6 +134,38 @@ export class EventList implements OnInit, OnDestroy {
         this.registeringIds.delete(event.id);
       }
     });
+  }
+
+  get currentPage(): number {
+    return Math.floor(this.pagination.offset / this.pagination.limit) + 1;
+  }
+
+  get totalPages(): number {
+    return Math.ceil(this.pagination.total / this.pagination.limit);
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages) return;
+    this.pagination.offset = (page - 1) * this.pagination.limit;
+    this.loadEvents();
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.goToPage(this.currentPage + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.goToPage(this.currentPage - 1);
+    }
+  }
+
+  changePageSize(newLimit: number): void {
+    this.pagination.limit = newLimit;
+    this.pagination.offset = 0;
+    this.loadEvents();
   }
 
   openChat(event: Event): void {

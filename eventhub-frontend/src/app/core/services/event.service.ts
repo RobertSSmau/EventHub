@@ -5,6 +5,7 @@ import {
   CreateEventRequest,
   Event,
   EventFilters,
+  EventListResponse,
   EventParticipant,
   EventStatus,
   UpdateEventRequest,
@@ -21,8 +22,8 @@ interface EventMutationResponse {
 export class EventService {
   constructor(private api: ApiService) {}
 
-  getEvents(filters?: EventFilters): Observable<Event[]> {
-    return this.api.get<Event[]>('/events', filters);
+  getEvents(filters?: EventFilters): Observable<EventListResponse> {
+    return this.api.get<EventListResponse>('/events', filters);
   }
 
   getEventById(id: number): Observable<Event> {

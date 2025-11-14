@@ -121,6 +121,43 @@
                   </div>
                 }
               </div>
+
+              <!-- Events Pagination Controls -->
+              @if (eventsTotalPages > 1) {
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <div class="d-flex align-items-center">
+                    <label class="form-label me-2 mb-0">Items per page:</label>
+                    <select class="form-select form-select-sm" style="width: auto;" [(ngModel)]="eventsPagination.limit" (change)="changeEventsPageSize(eventsPagination.limit)">
+                      <option [ngValue]="5">5</option>
+                      <option [ngValue]="10">10</option>
+                      <option [ngValue]="25">25</option>
+                      <option [ngValue]="50">50</option>
+                    </select>
+                  </div>
+
+                  <nav aria-label="Events pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                      <li class="page-item" [class.disabled]="eventsCurrentPage === 1">
+                        <button class="page-link" (click)="previousEventsPage()" [disabled]="eventsCurrentPage === 1">Previous</button>
+                      </li>
+
+                      @for (page of [].constructor(eventsTotalPages); track $index) {
+                        <li class="page-item" [class.active]="eventsCurrentPage === $index + 1">
+                          <button class="page-link" (click)="goToEventsPage($index + 1)">{{ $index + 1 }}</button>
+                        </li>
+                      }
+
+                      <li class="page-item" [class.disabled]="eventsCurrentPage === eventsTotalPages">
+                        <button class="page-link" (click)="nextEventsPage()" [disabled]="eventsCurrentPage === eventsTotalPages">Next</button>
+                      </li>
+                    </ul>
+                  </nav>
+
+                  <div class="text-muted small">
+                    Page {{ eventsCurrentPage }} of {{ eventsTotalPages }} ({{ eventsPagination.total }} total)
+                  </div>
+                </div>
+              }
             }
           </div>
         </div>
@@ -195,15 +232,25 @@
             <button type="button" class="btn btn-outline-primary btn-sm" (click)="loadUsers()">Refresh</button>
           </div>
           <div class="card-body">
+            <!-- Search Bar -->
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                [(ngModel)]="userSearchTerm"
+                (input)="onUserSearch()"
+                placeholder="Search users by username or email..."
+                autocomplete="off">
+            </div>
             @if (usersLoading) {
               <div class="text-center text-muted">Loading users...</div>
             } @else if (usersError) {
               <div class="alert alert-danger">{{ usersError }}</div>
-            } @else if (!users.length) {
+            } @else if (!filteredUsers.length) {
               <div class="text-center text-muted">No users found.</div>
             } @else {
               <div class="list-group list-group-flush">
-                @for (user of users; track user.id) {
+                @for (user of filteredUsers; track user.id) {
                   <div class="list-group-item d-flex justify-content-between align-items-center">
                     <div>
                       <h5 class="mb-1">{{ user.username }}</h5>
@@ -219,6 +266,43 @@
                   </div>
                 }
               </div>
+
+              <!-- Pagination Controls -->
+              @if (totalPages > 1) {
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <div class="d-flex align-items-center">
+                    <label class="form-label me-2 mb-0">Items per page:</label>
+                    <select class="form-select form-select-sm" style="width: auto;" [(ngModel)]="usersPagination.limit" (change)="changePageSize(usersPagination.limit)">
+                      <option [ngValue]="5">5</option>
+                      <option [ngValue]="10">10</option>
+                      <option [ngValue]="25">25</option>
+                      <option [ngValue]="50">50</option>
+                    </select>
+                  </div>
+
+                  <nav aria-label="User pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                      <li class="page-item" [class.disabled]="currentPage === 1">
+                        <button class="page-link" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+                      </li>
+
+                      @for (page of [].constructor(totalPages); track $index) {
+                        <li class="page-item" [class.active]="currentPage === $index + 1">
+                          <button class="page-link" (click)="goToPage($index + 1)">{{ $index + 1 }}</button>
+                        </li>
+                      }
+
+                      <li class="page-item" [class.disabled]="currentPage === totalPages">
+                        <button class="page-link" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+                      </li>
+                    </ul>
+                  </nav>
+
+                  <div class="text-muted small">
+                    Page {{ currentPage }} of {{ totalPages }} ({{ usersPagination.total }} total)
+                  </div>
+                </div>
+              }
             }
           </div>
         </div>

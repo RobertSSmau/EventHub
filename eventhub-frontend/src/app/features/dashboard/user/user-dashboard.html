@@ -434,6 +434,43 @@
                   </div>
                 }
               </div>
+
+              <!-- Available Events Pagination Controls -->
+              @if (availableEventsTotalPages > 1) {
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                  <div class="d-flex align-items-center">
+                    <label class="form-label me-2 mb-0">Items per page:</label>
+                    <select class="form-select form-select-sm" style="width: auto;" [(ngModel)]="availableEventsPagination.limit" (change)="changeAvailableEventsPageSize(availableEventsPagination.limit)">
+                      <option [ngValue]="6">6</option>
+                      <option [ngValue]="12">12</option>
+                      <option [ngValue]="24">24</option>
+                      <option [ngValue]="48">48</option>
+                    </select>
+                  </div>
+
+                  <nav aria-label="Available events pagination">
+                    <ul class="pagination pagination-sm mb-0">
+                      <li class="page-item" [class.disabled]="availableEventsCurrentPage === 1">
+                        <button class="page-link" (click)="previousAvailableEventsPage()" [disabled]="availableEventsCurrentPage === 1">Previous</button>
+                      </li>
+
+                      @for (page of [].constructor(availableEventsTotalPages); track $index) {
+                        <li class="page-item" [class.active]="availableEventsCurrentPage === $index + 1">
+                          <button class="page-link" (click)="goToAvailableEventsPage($index + 1)">{{ $index + 1 }}</button>
+                        </li>
+                      }
+
+                      <li class="page-item" [class.disabled]="availableEventsCurrentPage === availableEventsTotalPages">
+                        <button class="page-link" (click)="nextAvailableEventsPage()" [disabled]="availableEventsCurrentPage === availableEventsTotalPages">Next</button>
+                      </li>
+                    </ul>
+                  </nav>
+
+                  <div class="text-muted small">
+                    Page {{ availableEventsCurrentPage }} of {{ availableEventsTotalPages }} ({{ availableEventsPagination.total }} total)
+                  </div>
+                </div>
+              }
             }
           </div>
         </div>

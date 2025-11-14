@@ -81,5 +81,32 @@
         </div>
       }
     </div>
+
+    <!-- Pagination Controls -->
+    @if (totalPages > 1) {
+      <div class="d-flex justify-content-center mt-4">
+        <nav aria-label="Events pagination">
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="currentPage === 1">
+              <button class="page-link" (click)="previousPage()" [disabled]="currentPage === 1">Previous</button>
+            </li>
+
+            @for (page of [].constructor(totalPages); track $index) {
+              <li class="page-item" [class.active]="currentPage === $index + 1">
+                <button class="page-link" (click)="goToPage($index + 1)">{{ $index + 1 }}</button>
+              </li>
+            }
+
+            <li class="page-item" [class.disabled]="currentPage === totalPages">
+              <button class="page-link" (click)="nextPage()" [disabled]="currentPage === totalPages">Next</button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <div class="text-center text-muted mt-2">
+        <small>Page {{ currentPage }} of {{ totalPages }} ({{ pagination.total }} total events)</small>
+      </div>
+    }
   }
 </div>
