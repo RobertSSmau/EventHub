@@ -15,7 +15,9 @@ export async function initEmail() {
     }
     
     transporter = nodemailer.createTransport({
-      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 2525,  // ← Porta alternativa che Render permette
+      secure: false,  // TLS, non SSL
       auth: {
         user: emailUser,
         pass: emailPass // App Password di Gmail
@@ -30,6 +32,7 @@ export async function initEmail() {
     return transporter;
   } catch (error) {
     console.error('❌ Errore configurazione Gmail:', error.message);
+    console.warn('⚠️ Email transporter fallito. Email non verranno inviate.');
     return null;
   }
 }

@@ -13,16 +13,13 @@ import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 import session from 'express-session';
 
-// DEBUG: Log environment at startup
-console.log('🔍 Environment at startup:');
-console.log('  FRONTEND_URL:', process.env.FRONTEND_URL);
-console.log('  NODE_ENV:', process.env.NODE_ENV);
-console.log('  PORT:', process.env.PORT);
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+
+// Trust proxy - IMPORTANTE per Render (proxy reverse)
+app.set('trust proxy', 1);
 
 // Helmet with relaxed CSP for test client
 app.use(helmet({
