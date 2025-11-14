@@ -125,6 +125,13 @@ export class ChatPage implements OnInit, OnDestroy {
         );
       })
     );
+    this.subs.push(
+      this.socketService.reconnect$.subscribe(() => {
+        if (this.selectedConversation) {
+          this.socketService.joinConversation(this.selectedConversation._id);
+        }
+      })
+    );
   }
 
   private loadConversations(): void {

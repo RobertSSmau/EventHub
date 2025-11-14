@@ -21,11 +21,13 @@ const activeUsers = new Map();
 export function initSocketIO(server) {
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: process.env.CLIENT_URL || process.env.NODE_ENV === 'production' ? '*' : 'http://localhost:3000',
       methods: ['GET', 'POST'],
       credentials: true,
     },
-    pingTimeout: 60000,
+    pingTimeout: 20000, // Reduced from 60000
+    pingInterval: 25000, // Keep alive interval
+    transports: ['websocket', 'polling'],
   });
 
   // Authentication middleware

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { io, Socket } from 'socket.io-client';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, interval } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { AuthService } from './auth';
 import { Conversation, Message, MessageType } from '../../shared/models/chat.model';
@@ -45,6 +45,8 @@ export class SocketService {
   private conversationReadSubject = new Subject<ConversationReadEvent>();
   private statusSubject = new Subject<UserStatusEvent>();
   private errorSubject = new Subject<string>();
+  private reconnectSubject = new Subject<void>();
+  private keepAliveSubscription: any;
 
   public message$ = this.messageSubject.asObservable();
   public typing$ = this.typingSubject.asObservable();
@@ -52,6 +54,7 @@ export class SocketService {
   public conversationRead$ = this.conversationReadSubject.asObservable();
   public status$ = this.statusSubject.asObservable();
   public errors$ = this.errorSubject.asObservable();
+  public reconnect$ = this.reconnectSubject.asObservable();
 
   constructor(private authService: AuthService) {}
 
@@ -70,10 +73,16 @@ export class SocketService {
 
     this.socket = io(environment.socketUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'], // Prefer polling first
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
     });
 
     this.registerCoreHandlers();
+    this.startKeepAlive();
   }
 
   disconnect(): void {
@@ -81,12 +90,38 @@ export class SocketService {
       this.socket.disconnect();
       this.socket = null;
     }
+    this.stopKeepAlive();
+  }
+
+  private startKeepAlive(): void {
+    this.stopKeepAlive();
+    // Ping every 10 minutes to keep Render app awake
+    this.keepAliveSubscription = interval(10 * 60 * 1000).subscribe(() => {
+      fetch(`${environment.apiUrl}/health`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.authService.getToken()}`
+        }
+      }).catch(() => {
+        // Ignore errors, just keeping alive
+      });
+    });
+  }
+
+  private stopKeepAlive(): void {
+    if (this.keepAliveSubscription) {
+      this.keepAliveSubscription.unsubscribe();
+      this.keepAliveSubscription = null;
+    }
   }
 
   private registerCoreHandlers(): void {
     if (!this.socket) return;
 
-    this.socket.on('connect', () => console.log('Socket connected'));
+    this.socket.on('connect', () => {
+      console.log('Socket connected');
+      this.reconnectSubject.next();
+    });
     this.socket.on('disconnect', () => console.log('Socket disconnected'));
 
     this.socket.on('error', (error: any) => {
@@ -124,13 +159,16 @@ export class SocketService {
   }
 
   private emit(event: string, payload: Record<string, unknown>): void {
-    if (!this.socket?.connected) {
-      this.connect(true);
-    }
-    if (!this.socket?.connected) {
-      console.warn(`Socket emit skipped (${event}): not connected`);
+    if (!this.socket) {
+      console.warn(`Socket emit skipped (${event}): socket not initialized`);
       return;
     }
+    
+    // If not connected, wait for connection or emit anyway (Socket.IO handles queuing)
+    if (!this.socket.connected) {
+      console.log(`Socket not connected, attempting to emit ${event} anyway`);
+    }
+    
     this.socket.emit(event, payload);
   }
 
