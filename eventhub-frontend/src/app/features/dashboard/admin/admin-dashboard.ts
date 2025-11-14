@@ -87,6 +87,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
   }
 
   get filteredUsers() {
+    if (!this.users) return [];
     const searchTerm = this.debouncedSearchTerm.toLowerCase().trim();
     return this.users.filter(user =>
       !searchTerm ||
@@ -205,9 +206,14 @@ export class AdminDashboard implements OnInit, OnDestroy {
     // Reset pagination when switching sections
     if (section === 'pending-events') {
       this.eventsPagination.offset = 0;
+      this.pendingEvents = []; // Ensure it's always an array
       this.loadPendingEvents();
+    } else if (section === 'reports') {
+      this.reports = []; // Ensure it's always an array
+      this.loadReports();
     } else if (section === 'users') {
       this.usersPagination.offset = 0;
+      this.users = []; // Ensure it's always an array
       this.loadUsers();
     }
     // Chiudi il menu mobile quando si seleziona una sezione

@@ -103,7 +103,7 @@
               <div class="text-center text-muted">Loading pending events...</div>
             } @else if (eventsError) {
               <div class="alert alert-danger">{{ eventsError }}</div>
-            } @else if (!pendingEvents.length) {
+            } @else if (!pendingEvents || !pendingEvents.length) {
               <div class="text-center text-muted">Nothing to review right now 🎉</div>
             } @else {
               <div class="list-group list-group-flush">
@@ -178,7 +178,7 @@
               <div class="text-center text-muted">Loading reports...</div>
             } @else if (reportsError) {
               <div class="alert alert-danger">{{ reportsError }}</div>
-            } @else if (!reports.length) {
+            } @else if (!reports || !reports.length) {
               <div class="text-center text-muted">No reports submitted.</div>
             } @else {
               <div class="list-group list-group-flush">
@@ -246,7 +246,7 @@
               <div class="text-center text-muted">Loading users...</div>
             } @else if (usersError) {
               <div class="alert alert-danger">{{ usersError }}</div>
-            } @else if (!filteredUsers.length) {
+            } @else if (!filteredUsers || !filteredUsers.length) {
               <div class="text-center text-muted">No users found.</div>
             } @else {
               <div class="list-group list-group-flush">

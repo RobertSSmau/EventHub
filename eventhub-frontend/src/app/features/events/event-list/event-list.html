@@ -20,7 +20,7 @@
 
   @if (loading) {
     <div class="text-center text-muted">Loading events...</div>
-  } @else if (!events.length) {
+  } @else if (!events || !events.length) {
     <div class="text-center text-muted">No events available right now.</div>
   } @else {
     <div class="row g-4">

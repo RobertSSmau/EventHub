@@ -1,4 +1,5 @@
 import { User } from '../models/index.js';
+import { Op } from 'sequelize';
 
 /**
  * GET /api/users
@@ -9,7 +10,7 @@ export async function getAllUsers(req, res) {
 
   const { count, rows } = await User.findAndCountAll({
     attributes: ['id', 'username', 'email', 'role', 'is_blocked', 'created_at'],
-    where: { role: { [require('sequelize').Op.ne]: 'ADMIN' } }, // Exclude admins
+    where: { role: { [Op.ne]: 'ADMIN' } }, // Exclude admins
     limit: parseInt(limit),
     offset: parseInt(offset),
     order: [['created_at', 'DESC']],

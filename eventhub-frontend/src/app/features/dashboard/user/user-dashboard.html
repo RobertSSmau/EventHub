@@ -386,7 +386,7 @@
               <div class="text-center text-muted">Loading events...</div>
             } @else if (availableEventsError) {
               <div class="alert alert-danger">{{ availableEventsError }}</div>
-            } @else if (!availableEvents.length) {
+            } @else if (!availableEvents || !availableEvents.length) {
               <div class="text-center text-muted">No events found.</div>
             } @else {
               <div class="row">
