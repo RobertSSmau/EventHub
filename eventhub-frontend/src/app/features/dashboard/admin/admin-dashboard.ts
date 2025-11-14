@@ -18,8 +18,7 @@ import { Router } from '@angular/router';
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './admin-dashboard.html',
-  styleUrl: './admin-dashboard.scss',
+  templateUrl: './admin-dashboard.html'
 })
 export class AdminDashboard implements OnInit {
   pendingEvents: Event[] = [];
@@ -36,6 +35,10 @@ export class AdminDashboard implements OnInit {
 
   reportStatusOptions: ReportStatus[] = ['PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED'];
   reportDraftStatus: Record<number, ReportStatus> = {};
+
+  activeSection: 'pending-events' | 'reports' | 'users' = 'pending-events';
+
+  isMobileMenuOpen = false;
 
   constructor(
     private eventService: EventService,
@@ -124,7 +127,7 @@ export class AdminDashboard implements OnInit {
     this.usersLoading = true;
     this.usersError = '';
     this.userService.getAllUsers().subscribe({
-      next: (users) => (this.users = users),
+      next: (users) => (this.users = users.filter(user => user.role !== 'ADMIN')),
       error: (err) => (this.usersError = err.error?.message || 'Unable to load users'),
       complete: () => (this.usersLoading = false),
     });
@@ -138,6 +141,16 @@ export class AdminDashboard implements OnInit {
       },
       error: () => (this.usersError = 'Unable to update user state'),
     });
+  }
+
+  setActiveSection(section: 'pending-events' | 'reports' | 'users'): void {
+    this.activeSection = section;
+    // Chiudi il menu mobile quando si seleziona una sezione
+    this.isMobileMenuOpen = false;
+  }
+
+  toggleMobileMenu(): void {
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
   }
 
   logout(): void {
