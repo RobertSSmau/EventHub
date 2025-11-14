@@ -20,6 +20,7 @@ export class VerifyEmail implements OnInit {
 
   ngOnInit(): void {
     const token = this.route.snapshot.params['token'];
+    console.log('🔍 Token verificato:', token);
 
     if (!token) {
       this.status = 'error';
@@ -29,6 +30,7 @@ export class VerifyEmail implements OnInit {
 
     this.authService.verifyEmail(token).subscribe({
       next: (response) => {
+        console.log('Email verificata:', response);
         this.status = 'success';
         this.message = response.message;
         // Redirect to login after 3 seconds
@@ -37,6 +39,7 @@ export class VerifyEmail implements OnInit {
         }, 3000);
       },
       error: (error) => {
+        console.error('Errore verifica:', error);
         this.status = 'error';
         this.message = error.error?.message || 'Verification failed';
       }
