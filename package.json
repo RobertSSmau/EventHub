@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/RobertSSmau/EventHub#readme",
   "dependencies": {
+    "@sendgrid/mail": "^8.1.6",
     "accesscontrol": "^2.2.1",
     "argon2": "^0.44.0",
     "celebrate": "^15.0.3",
