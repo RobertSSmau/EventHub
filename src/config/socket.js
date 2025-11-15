@@ -9,6 +9,7 @@ import { User } from '../models/index.js';
 import Conversation from '../models/chat/conversation.model.js';
 import Message from '../models/chat/message.model.js';
 import { enrichMessages } from '../dto/chat.dto.js';
+import { isBlacklisted } from '../utils/tokenBlacklist.js';
 
 let io = null;
 
@@ -31,12 +32,17 @@ export function initSocketIO(server) {
   });
 
   // Authentication middleware
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth.token;
       
       if (!token) {
         return next(new Error('Authentication required'));
+      }
+
+      // Check if token is blacklisted
+      if (await isBlacklisted(token)) {
+        return next(new Error('Token has been revoked'));
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);

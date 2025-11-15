@@ -34,8 +34,4 @@ router.use('/chat', chatRoutes);
 
 router.use('/notifications', notificationRoutes);
 
-router.get('/boom', async (req, res) => {
-  throw new Error('crash');
-});
-
 export default router;

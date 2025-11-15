@@ -24,7 +24,14 @@ export async function register(req, res) {
 
   // Generate verification token and send email
   const verificationToken = await createVerificationToken(email);
-  await sendVerificationEmail(email, verificationToken);
+  const emailSent = await sendVerificationEmail(email, verificationToken);
+  
+  // In development, auto-verify if email service is not configured
+  if (!emailSent && process.env.NODE_ENV !== 'production') {
+    console.warn(`Email service not configured. Auto-verifying user in ${process.env.NODE_ENV} mode.`);
+    newUser.email_verified = true;
+    await newUser.save();
+  }
 
   const token = generateToken(newUser);
   res.status(201).json({ 
@@ -47,6 +54,13 @@ export async function login(req, res) {
 
   if (user.is_blocked)
     return res.status(403).json({ message: 'User account is blocked' });
+
+  // Check if user registered with OAuth (no password)
+  if (!user.password_hash) {
+    return res.status(400).json({ 
+      message: 'This account uses OAuth authentication. Please login with Google.' 
+    });
+  }
 
   if (!user.email_verified)
     return res.status(403).json({ message: 'Please verify your email before logging in' });

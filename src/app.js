@@ -44,9 +44,14 @@ app.use(compression());
 app.use(express.json());
 app.use(morgan('dev'));
 
+// Validate critical environment variables
+if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
+  throw new Error('JWT_SECRET must be set in production environment');
+}
+
 // Session middleware (required for Passport OAuth)
 app.use(session({
-  secret: process.env.JWT_SECRET || 'fallback-secret-for-sessions',
+  secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
   cookie: {

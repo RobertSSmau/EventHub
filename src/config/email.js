@@ -28,7 +28,7 @@ export async function initEmail() {
 export async function sendVerificationEmail(email, token) {
   if (!emailService) {
     console.warn('Email service non inizializzato');
-    return null;
+    return false;
   }
   
   const verifyUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/auth/verify-email/${token}`;
@@ -58,10 +58,10 @@ export async function sendVerificationEmail(email, token) {
     });
     
     console.log('Email verifica inviata a:', email);
-    return { success: true };
+    return true;
   } catch (error) {
     console.error('Errore invio email verifica:', error.message);
-    return null;
+    return false;
   }
 }
 
