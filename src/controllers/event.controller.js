@@ -30,8 +30,17 @@ export async function createEvent(req, res) {
  */
 export async function getAllEvents(req, res) {
   try {
-    const result = await eventService.getAllEvents(req.query);
-    res.json(result.events);
+    // Pass user role to service to determine access to pending events
+    const userRole = req.user?.role || null;
+    const result = await eventService.getAllEvents(req.query, userRole);
+    res.json({
+      events: result.events,
+      pagination: {
+        total: result.total,
+        limit: result.limit,
+        offset: result.offset
+      }
+    });
   } catch (error) {
     console.error('Error fetching events:', error);
     res.status(500).json({ message: 'Error fetching events' });

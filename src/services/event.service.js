@@ -23,10 +23,19 @@ export async function createEvent(userId, eventData) {
 /**
  * Get all events with filters and pagination
  */
-export async function getAllEvents(filters = {}) {
-  const { category, location, title, dateFrom, dateTo, status = 'APPROVED', limit = 10, offset = 0 } = filters;
+export async function getAllEvents(filters = {}, userRole = null) {
+  const { category, location, title, dateFrom, dateTo, status, limit = 10, offset = 0 } = filters;
 
-  const where = { status };
+  // Only ADMIN can see PENDING/REJECTED events, others only see APPROVED
+  let effectiveStatus = status;
+  if (userRole !== 'ADMIN') {
+    effectiveStatus = 'APPROVED';
+  } else if (!status) {
+    // If admin doesn't specify status, default to APPROVED
+    effectiveStatus = 'APPROVED';
+  }
+
+  const where = { status: effectiveStatus };
 
   if (category) {
     where.category = { [Op.iLike]: `%${category}%` };

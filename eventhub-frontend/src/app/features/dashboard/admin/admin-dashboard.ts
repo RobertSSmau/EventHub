@@ -7,6 +7,7 @@ import { EventService } from '../../../core/services/event.service';
 import { ReportService } from '../../../core/services/report.service';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth';
+import { NotificationService, Notification } from '../../../core/services/notification.service';
 import { Event, EventListResponse } from '../../../shared/models/event.model';
 import {
   Report,
@@ -48,7 +49,13 @@ export class AdminDashboard implements OnInit, OnDestroy {
   reportStatusOptions: ReportStatus[] = ['PENDING', 'REVIEWED', 'RESOLVED', 'DISMISSED'];
   reportDraftStatus: Record<number, ReportStatus> = {};
 
-  activeSection: 'pending-events' | 'reports' | 'users' = 'pending-events';
+  notifications: Notification[] = [];
+  notificationsLoading = false;
+  notificationsError = '';
+
+  activeSection: 'pending-events' | 'reports' | 'users' | 'notifications' = 'pending-events';
+
+  currentUser: User | null = null;
 
   isMobileMenuOpen = false;
 
@@ -64,6 +71,7 @@ export class AdminDashboard implements OnInit, OnDestroy {
     private reportService: ReportService,
     private userService: UserService,
     private authService: AuthService,
+    private notificationService: NotificationService,
     private router: Router
   ) {}
 
@@ -83,6 +91,20 @@ export class AdminDashboard implements OnInit, OnDestroy {
         .subscribe(searchTerm => {
           this.debouncedSearchTerm = searchTerm;
         })
+    );
+
+    // Subscribe to current user
+    this.subs.push(
+      this.authService.currentUser$.subscribe(user => {
+        this.currentUser = user;
+      })
+    );
+
+    // Subscribe to notifications
+    this.subs.push(
+      this.notificationService.notifications$.subscribe(notifications => {
+        this.notifications = notifications;
+      })
     );
   }
 
@@ -201,20 +223,31 @@ export class AdminDashboard implements OnInit, OnDestroy {
     });
   }
 
-  setActiveSection(section: 'pending-events' | 'reports' | 'users'): void {
+  setActiveSection(section: 'pending-events' | 'reports' | 'users' | 'notifications'): void {
     this.activeSection = section;
     // Reset pagination when switching sections
     if (section === 'pending-events') {
-      this.eventsPagination.offset = 0;
       this.pendingEvents = []; // Ensure it's always an array
+      this.eventsPagination = {
+        total: 0,
+        limit: 10,
+        offset: 0,
+      };
       this.loadPendingEvents();
     } else if (section === 'reports') {
       this.reports = []; // Ensure it's always an array
       this.loadReports();
     } else if (section === 'users') {
-      this.usersPagination.offset = 0;
       this.users = []; // Ensure it's always an array
+      this.usersPagination = {
+        total: 0,
+        limit: 10,
+        offset: 0,
+      };
       this.loadUsers();
+    } else if (section === 'notifications') {
+      this.notifications = []; // Ensure it's always an array
+      this.loadNotifications();
     }
     // Chiudi il menu mobile quando si seleziona una sezione
     this.isMobileMenuOpen = false;
@@ -302,5 +335,54 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.eventsPagination.limit = newLimit;
     this.eventsPagination.offset = 0;
     this.loadPendingEvents();
+  }
+
+  loadNotifications(): void {
+    this.notificationsLoading = true;
+    this.notificationsError = '';
+    // Notifications are loaded automatically via subscription in ngOnInit
+    this.notificationsLoading = false;
+  }
+
+  async markAsRead(notificationId: string): Promise<void> {
+    try {
+      await this.notificationService.markAsRead(notificationId);
+      // The service already updates the local state, so we don't need to do anything here
+    } catch (error: any) {
+      this.notificationsError = error.error?.message || 'Unable to mark notification as read';
+    }
+  }
+
+  formatTimestamp(timestamp: Date): string {
+    const date = timestamp;
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return date.toLocaleDateString();
+  }
+
+  getRegistrationDetails(notification: Notification): string {
+    const data = notification.data as any;
+    return data?.eventTitle ? `Registered for: ${data.eventTitle}` : 'New registration';
+  }
+
+  getUnregistrationDetails(notification: Notification): string {
+    const data = notification.data as any;
+    return data?.eventTitle ? `Unregistered from: ${data.eventTitle}` : 'Unregistration';
+  }
+
+  getReportDetails(notification: Notification): string {
+    const data = notification.data as any;
+    const target = data?.reportedEvent
+      ? `evento "${data.reportedEvent.title}"`
+      : `utente @${data?.reportedUser?.username}`;
+    return target ? `Report for: ${target}` : 'New report';
   }
 }

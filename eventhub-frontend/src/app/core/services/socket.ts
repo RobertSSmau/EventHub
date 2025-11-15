@@ -34,6 +34,51 @@ export interface UserStatusEvent {
   online: boolean;
 }
 
+export interface RegistrationNotification {
+  eventId: number;
+  eventTitle: string;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+  };
+  registeredAt: string;
+  currentParticipants: number;
+  capacity: number | null;
+}
+
+export interface UnregistrationNotification {
+  eventId: number;
+  eventTitle: string;
+  user: {
+    id: number;
+    username: string;
+  };
+  currentParticipants: number;
+  capacity: number | null;
+}
+
+export interface ReportNotification {
+  reportId: number;
+  reason: string;
+  description: string;
+  reporter: {
+    id: number;
+    username: string;
+  };
+  reportedUser?: {
+    id: number;
+    username: string;
+  };
+  reportedEvent?: {
+    id: number;
+    title: string;
+    date: string;
+    location: string;
+  };
+  createdAt: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -44,6 +89,9 @@ export class SocketService {
   private readSubject = new Subject<ReadReceiptEvent>();
   private conversationReadSubject = new Subject<ConversationReadEvent>();
   private statusSubject = new Subject<UserStatusEvent>();
+  private registrationSubject = new Subject<RegistrationNotification>();
+  private unregistrationSubject = new Subject<UnregistrationNotification>();
+  private reportSubject = new Subject<ReportNotification>();
   private errorSubject = new Subject<string>();
   private reconnectSubject = new Subject<void>();
   private keepAliveSubscription: any;
@@ -53,6 +101,9 @@ export class SocketService {
   public read$ = this.readSubject.asObservable();
   public conversationRead$ = this.conversationReadSubject.asObservable();
   public status$ = this.statusSubject.asObservable();
+  public registration$ = this.registrationSubject.asObservable();
+  public unregistration$ = this.unregistrationSubject.asObservable();
+  public report$ = this.reportSubject.asObservable();
   public errors$ = this.errorSubject.asObservable();
   public reconnect$ = this.reconnectSubject.asObservable();
 
@@ -73,7 +124,7 @@ export class SocketService {
 
     this.socket = io(environment.socketUrl, {
       auth: { token },
-      transports: ['polling', 'websocket'], // Prefer polling first
+      transports: ['websocket', 'polling'], // Prefer websocket for faster communication
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -155,6 +206,22 @@ export class SocketService {
 
     this.socket.on('user:offline', ({ userId }) => {
       this.statusSubject.next({ userId, online: false });
+    });
+
+    // 🔔 Notification handlers with debug logs
+    this.socket.on('event:new_registration', (payload: RegistrationNotification) => {
+      console.log('📨 Socket ricevuto: event:new_registration', payload);
+      this.registrationSubject.next(payload);
+    });
+
+    this.socket.on('event:unregistration', (payload: UnregistrationNotification) => {
+      console.log('📨 Socket ricevuto: event:unregistration', payload);
+      this.unregistrationSubject.next(payload);
+    });
+
+    this.socket.on('report:new', (payload: ReportNotification) => {
+      console.log('📨 Socket ricevuto: report:new', payload);
+      this.reportSubject.next(payload);
     });
   }
 

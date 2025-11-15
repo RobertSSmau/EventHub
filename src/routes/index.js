@@ -12,6 +12,7 @@ import eventRoutes from './event.routes.js';
 import registrationRoutes from './registration.routes.js';
 import reportRoutes from './report.routes.js';
 import chatRoutes from './chat.routes.js';
+import notificationRoutes from './notification.routes.js';
 
 const router = Router();
 
@@ -30,6 +31,8 @@ router.use('/auth', authRoutes);
 router.use('/reports', reportRoutes);
 
 router.use('/chat', chatRoutes);
+
+router.use('/notifications', notificationRoutes);
 
 router.get('/boom', async (req, res) => {
   throw new Error('crash');

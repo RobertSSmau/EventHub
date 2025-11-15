@@ -6,6 +6,7 @@ import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import { EventService } from '../../../core/services/event.service';
 import { RegistrationService } from '../../../core/services/registration.service';
 import { AuthService } from '../../../core/services/auth';
+import { NotificationService, Notification } from '../../../core/services/notification.service';
 import {
   CreateEventRequest,
   Event,
@@ -13,6 +14,7 @@ import {
   EventParticipant,
 } from '../../../shared/models/event.model';
 import { Registration } from '../../../shared/models/registration.model';
+import { User } from '../../../shared/models/user.model';
 import { Router } from '@angular/router';
 
 @Component({
@@ -60,7 +62,11 @@ export class UserDashboard implements OnInit, OnDestroy {
   selectedStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | '' = 'APPROVED';
   categories: string[] = ['Tech', 'Business', 'Art', 'Sports', 'Education', 'Other'];
 
-  activeSection: 'create' | 'my-events' | 'registrations' | 'browse' = 'my-events';
+  activeSection: 'create' | 'my-events' | 'registrations' | 'browse' | 'notifications' = 'my-events';
+
+  currentUser: User | null = null;
+
+  notifications: Notification[] = [];
 
   isMobileMenuOpen = false;
 
@@ -72,6 +78,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     private eventService: EventService,
     private registrationService: RegistrationService,
     private authService: AuthService,
+    private notificationService: NotificationService,
     private router: Router
   ) {}
 
@@ -79,6 +86,15 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.loadMyEvents();
     this.loadRegistrations();
     this.loadAvailableEvents();
+
+    // Subscribe to notifications
+    this.subs.push(
+      this.notificationService.notifications$.subscribe(
+        (notifications: Notification[]) => {
+          this.notifications = notifications;
+        }
+      )
+    );
 
     // Configure search debounce
     this.subs.push(
@@ -91,6 +107,13 @@ export class UserDashboard implements OnInit, OnDestroy {
         .subscribe(searchTerm => {
           this.performSearch(searchTerm);
         })
+    );
+
+    // Subscribe to current user
+    this.subs.push(
+      this.authService.currentUser$.subscribe(user => {
+        this.currentUser = user;
+      })
     );
   }
 
@@ -211,8 +234,12 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   submitEvent(): void {
+    console.log('🔴 submitEvent() called');
+    console.log('📋 createEventData:', this.createEventData);
+    
     if (!this.createEventData.dateLocal) {
       this.createError = 'Select event date and time';
+      console.log('❌ No dateLocal');
       return;
     }
 
@@ -230,13 +257,17 @@ export class UserDashboard implements OnInit, OnDestroy {
       image_url: this.createEventData.image_url,
     };
 
+    console.log('📤 Payload being sent:', payload);
+
     this.eventService.createEvent(payload).subscribe({
       next: (res) => {
+        console.log('✅ Response from server:', res);
         this.createSuccess = res.message;
         this.resetCreateForm();
         this.loadMyEvents();
       },
       error: (err) => {
+        console.error('❌ Error from server:', err);
         this.createError = err.error?.message || 'Unable to create event';
       },
       complete: () => {
@@ -293,7 +324,7 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.router.navigate(['/chat'], { queryParams: { eventId } });
   }
 
-  setActiveSection(section: 'create' | 'my-events' | 'registrations' | 'browse'): void {
+  setActiveSection(section: 'create' | 'my-events' | 'registrations' | 'browse' | 'notifications'): void {
     this.activeSection = section;
     // Chiudi il menu mobile quando si seleziona una sezione
     this.isMobileMenuOpen = false;
@@ -339,6 +370,52 @@ export class UserDashboard implements OnInit, OnDestroy {
     this.availableEventsPagination.limit = newLimit;
     this.availableEventsPagination.offset = 0;
     this.loadAvailableEvents();
+  }
+
+  // Notification methods
+  async loadNotifications(): Promise<void> {
+    // Notifications are loaded automatically via subscription
+    // This method can be used for manual refresh if needed
+  }
+
+  async markAsRead(notificationId: string): Promise<void> {
+    await this.notificationService.markAsRead(notificationId);
+  }
+
+  getRegistrationDetails(notification: Notification): string {
+    const data = notification.data as any;
+    const capacity = data.capacity ? ` / ${data.capacity}` : ' / illimitati';
+    return `${data.currentParticipants}${capacity} partecipanti`;
+  }
+
+  getUnregistrationDetails(notification: Notification): string {
+    const data = notification.data as any;
+    return `${data.currentParticipants} partecipanti rimasti`;
+  }
+
+  getReportDetails(notification: Notification): string {
+    const data = notification.data as any;
+    if (data.reportedEvent) {
+      return `Evento: ${data.reportedEvent.title}`;
+    } else if (data.reportedUser) {
+      return `Utente: @${data.reportedUser.username}`;
+    }
+    return '';
+  }
+
+  formatTimestamp(timestamp: Date): string {
+    const now = new Date();
+    const diff = now.getTime() - timestamp.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return 'Ora';
+    if (minutes < 60) return `${minutes}m fa`;
+    if (hours < 24) return `${hours}h fa`;
+    if (days < 7) return `${days}g fa`;
+
+    return timestamp.toLocaleDateString();
   }
 
   ngOnDestroy(): void {

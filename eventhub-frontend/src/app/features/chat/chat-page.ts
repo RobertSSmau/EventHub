@@ -79,7 +79,8 @@ export class ChatPage implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.currentUserId = this.authService.currentUser?.id || null;
-    this.socketService.connect();
+    // Socket is now connected globally from app initialization
+    // this.socketService.connect(); ← REMOVED: socket is connected globally
     this.loadConversations();
     this.registerRealtimeHandlers();
     this.listenToQueryParams();

@@ -6,6 +6,7 @@
 import { Report, Event, User } from '../models/index.js';
 import { Op } from 'sequelize';
 import { getIO } from '../config/socket.js';
+import { saveNotification } from './notification.service.js';
 
 /**
  * Create a new report
@@ -114,11 +115,24 @@ export async function createReport(userId, reportData) {
     }
 
     // Emit to each admin's personal room
-    adminUsers.forEach(admin => {
+    adminUsers.forEach(async (admin) => {
       io.to(`user:${admin.id}`).emit('report:new', notificationData);
-    });
 
-    console.log(`📢 Notified ${adminUsers.length} admin(s) of new report #${report.id}`);
+      // 💾 Save notification to MongoDB for each admin
+      const target = reported_user_id
+        ? `utente "@${fullReport.reportedUser?.username}"`
+        : `evento "${fullReport.reportedEvent?.title}"`;
+
+      await saveNotification({
+        userId: admin.id,
+        type: 'report',
+        title: 'Nuova segnalazione',
+        message: `Segnalazione per ${target} - Motivo: ${fullReport.reason}`,
+        icon: '⚠️',
+        color: 'danger',
+        data: notificationData
+      });
+    });
   } catch (error) {
     console.error('Error sending real-time notification to admins:', error);
     // Don't fail the request if notification fails

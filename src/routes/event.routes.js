@@ -6,7 +6,7 @@
 
 import { Router } from 'express';
 import { celebrate, Joi, errors } from 'celebrate';
-import { verifyToken } from '../middlewares/auth.middleware.js';
+import { verifyToken, optionalAuth } from '../middlewares/auth.middleware.js';
 import { checkRole } from '../middlewares/role.middleware.js';
 import {
   createEvent,
@@ -57,7 +57,7 @@ const router = Router();
  *       200:
  *         description: Returns list of approved events
  */
-router.get('/', getAllEvents);
+router.get('/', optionalAuth, getAllEvents);
 
 /**
  * @openapi

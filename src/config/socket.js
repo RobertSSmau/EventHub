@@ -155,8 +155,7 @@ export function initSocketIO(server) {
         // Send push notification to offline users
         conversation.participants.forEach((userId) => {
           if (userId !== socket.userId && !activeUsers.has(userId)) {
-            // TODO: Send push notification
-            console.log(`📧 Send push notification to user ${userId}`);
+            // Push notification logic can be implemented here
           }
         });
 
