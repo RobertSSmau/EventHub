@@ -8,11 +8,9 @@ export interface Notification {
   type: 'registration' | 'unregistration' | 'report';
   title: string;
   message: string;
-  icon: string;
   color: 'success' | 'danger' | 'warning' | 'info';
   data: RegistrationNotification | UnregistrationNotification | ReportNotification;
   timestamp: Date;
-  read: boolean;
 }
 
 @Injectable({
@@ -32,9 +30,8 @@ export class NotificationService {
     this.socketService.registration$.subscribe((data: RegistrationNotification) => {
       this.addNotification({
         type: 'registration',
-        title: `Nuova iscrizione`,
-        message: `${data.user.username} si è iscritto a "${data.eventTitle}"`,
-        icon: '✅',
+        title: `New registration`,
+        message: `${data.user.username} registered to "${data.eventTitle}"`,
         color: 'success',
         data,
       });
@@ -44,9 +41,8 @@ export class NotificationService {
     this.socketService.unregistration$.subscribe((data: UnregistrationNotification) => {
       this.addNotification({
         type: 'unregistration',
-        title: `Cancellazione iscrizione`,
-        message: `${data.user.username} si è cancellato da "${data.eventTitle}"`,
-        icon: '❌',
+        title: `Registration cancelled`,
+        message: `${data.user.username} cancelled registration from "${data.eventTitle}"`,
         color: 'warning',
         data,
       });
@@ -55,42 +51,30 @@ export class NotificationService {
     // Listen to report notifications
     this.socketService.report$.subscribe((data: ReportNotification) => {
       const target = data.reportedEvent
-        ? `evento "${data.reportedEvent.title}"`
-        : `utente @${data.reportedUser?.username}`;
+        ? `event "${data.reportedEvent.title}"`
+        : `user @${data.reportedUser?.username}`;
 
       this.addNotification({
         type: 'report',
-        title: `Nuova segnalazione`,
-        message: `Segnalazione per ${target} - Motivo: ${data.reason}`,
-        icon: '⚠️',
+        title: `New report`,
+        message: `Report for ${target}`,
         color: 'danger',
         data,
       });
     });
   }
 
-  private addNotification(config: Omit<Notification, 'id' | 'timestamp' | 'read'>): void {
+  private addNotification(config: Omit<Notification, 'id' | 'timestamp'>): void {
     const notification: Notification = {
       id: `${Date.now()}-${Math.random()}`,
       ...config,
       timestamp: new Date(),
-      read: false,
     };
 
-    // 🔔 LOG CONSOLE per debugging
-    console.log('NOTIFICA RICEVUTA:', {
-      tipo: config.type,
-      titolo: config.title,
-      messaggio: config.message,
-      timestamp: new Date().toLocaleTimeString(),
-      data: notification.data
-    });
+    console.log('Notification received:', config.type, config.title);
 
     const current = this.notifications.value;
     this.notifications.next([...current, notification]);
-
-    // Note: Real-time notifications are now permanent like stored ones
-    // They will remain until marked as read or page refresh
   }
 
   private async loadStoredNotifications(): Promise<void> {
@@ -102,57 +86,27 @@ export class NotificationService {
           type: n.type,
           title: n.title,
           message: n.message,
-          icon: n.icon,
           color: n.color,
           data: n.data,
           timestamp: new Date(n.timestamp),
-          read: n.read
         }));
 
-        // Merge stored notifications with existing real-time notifications
-        // Avoid duplicates by ID, prefer stored notifications for conflicts
-        const currentNotifications = this.notifications.value;
-        const mergedNotifications = [...currentNotifications];
-
-        storedNotifications.forEach(stored => {
-          const existingIndex = mergedNotifications.findIndex(n => n.id === stored.id);
-          if (existingIndex >= 0) {
-            // Replace existing with stored (stored has correct read status)
-            mergedNotifications[existingIndex] = stored;
-          } else {
-            // Add new stored notification
-            mergedNotifications.push(stored);
-          }
-        });
-
-        this.notifications.next(mergedNotifications);
-        console.log(`Caricate ${storedNotifications.length} notifiche storiche, totale: ${mergedNotifications.length}`);
+        this.notifications.next(storedNotifications);
+        console.log(`Loaded ${storedNotifications.length} notifications`);
       }
     } catch (error) {
-      console.error('Errore nel caricamento delle notifiche storiche:', error);
+      console.error('Error loading notifications:', error);
     }
   }
 
-  async markAsRead(id: string): Promise<void> {
-    try {
-      // Update local state immediately
-      const current = this.notifications.value;
-      const updated = current.map(n =>
-        n.id === id ? { ...n, read: true } : n
-      );
-      this.notifications.next(updated);
+  // Public method to refresh notifications
+  async refresh(): Promise<void> {
+    await this.loadStoredNotifications();
+  }
 
-      // Update on server
-      await this.api.put(`/notifications/${id}/read`, {}).toPromise();
-    } catch (error) {
-      console.error('Errore nel marcare la notifica come letta:', error);
-      // Revert local change on error
-      const current = this.notifications.value;
-      const reverted = current.map(n =>
-        n.id === id ? { ...n, read: false } : n
-      );
-      this.notifications.next(reverted);
-    }
+  removeNotification(id: string): void {
+    const current = this.notifications.value;
+    this.notifications.next(current.filter(n => n.id !== id));
   }
 
   async getUnreadCount(): Promise<number> {
@@ -163,11 +117,6 @@ export class NotificationService {
       console.error('Errore nel conteggio notifiche non lette:', error);
       return 0;
     }
-  }
-
-  removeNotification(id: string): void {
-    const current = this.notifications.value;
-    this.notifications.next(current.filter(n => n.id !== id));
   }
 
   clearAll(): void {

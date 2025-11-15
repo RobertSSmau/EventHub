@@ -340,17 +340,16 @@ export class AdminDashboard implements OnInit, OnDestroy {
   loadNotifications(): void {
     this.notificationsLoading = true;
     this.notificationsError = '';
-    // Notifications are loaded automatically via subscription in ngOnInit
-    this.notificationsLoading = false;
+    this.notificationService.refresh().then(() => {
+      this.notificationsLoading = false;
+    }).catch(error => {
+      this.notificationsError = error.error?.message || 'Unable to load notifications';
+      this.notificationsLoading = false;
+    });
   }
 
-  async markAsRead(notificationId: string): Promise<void> {
-    try {
-      await this.notificationService.markAsRead(notificationId);
-      // The service already updates the local state, so we don't need to do anything here
-    } catch (error: any) {
-      this.notificationsError = error.error?.message || 'Unable to mark notification as read';
-    }
+  removeNotification(notificationId: string): void {
+    this.notificationService.removeNotification(notificationId);
   }
 
   formatTimestamp(timestamp: Date): string {

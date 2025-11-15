@@ -114,8 +114,8 @@ export async function createReport(userId, reportData) {
       };
     }
 
-    // Emit to each admin's personal room
-    adminUsers.forEach(async (admin) => {
+    // Emit to each admin's personal room and save notifications
+    await Promise.all(adminUsers.map(async (admin) => {
       io.to(`user:${admin.id}`).emit('report:new', notificationData);
 
       // 💾 Save notification to MongoDB for each admin
@@ -132,7 +132,7 @@ export async function createReport(userId, reportData) {
         color: 'danger',
         data: notificationData
       });
-    });
+    }));
   } catch (error) {
     console.error('Error sending real-time notification to admins:', error);
     // Don't fail the request if notification fails

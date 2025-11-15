@@ -12,57 +12,23 @@ import { NotificationService, Notification } from '../../core/services/notificat
         <div 
           class="notification-toast"
           [class]="'notification-' + notification.type + ' ' + 'toast-' + notification.color"
-          [class.notification-read]="notification.read"
-          (click)="onNotificationClick(notification)"
         >
-          @if (!notification.read) {
-            <div class="notification-unread-indicator"></div>
-          }
           <div class="notification-content">
-            <span class="notification-icon">{{ notification.icon }}</span>
             <div class="notification-text">
               <p class="notification-title">{{ notification.title }}</p>
               <p class="notification-message">{{ notification.message }}</p>
-              @if (notification.type === 'registration') {
-                <p class="notification-details">
-                  Partecipanti: {{ getRegistrationDetails(notification) }}
-                </p>
-              } @else if (notification.type === 'unregistration') {
-                <p class="notification-details">
-                  Partecipanti: {{ getUnregistrationDetails(notification) }}
-                </p>
-              } @else if (notification.type === 'report') {
-                <p class="notification-details">
-                  {{ getReportDetails(notification) }}
-                </p>
-                <p class="notification-description">
-                  {{ getReportDescription(notification) }}
-                </p>
-              }
               <p class="notification-timestamp">
                 {{ formatTimestamp(notification.timestamp) }}
               </p>
             </div>
-            <div class="notification-actions">
-              @if (!notification.read) {
-                <button 
-                  class="notification-mark-read"
-                  (click)="onMarkAsRead($event, notification.id)"
-                  aria-label="Segna come letta"
-                >
-                  ✓
-                </button>
-              }
-              <button 
-                class="notification-close"
-                (click)="onClose($event, notification.id)"
-                aria-label="Chiudi notifica"
-              >
-                ✕
-              </button>
-            </div>
+            <button 
+              class="notification-close"
+              (click)="onClose($event, notification.id)"
+              aria-label="Close"
+            >
+              ✕
+            </button>
           </div>
-          <div class="notification-progress" *ngIf="!notification.read"></div>
         </div>
       }
     </div>
@@ -94,7 +60,6 @@ import { NotificationService, Notification } from '../../core/services/notificat
       border-radius: 8px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       overflow: hidden;
-      cursor: pointer;
       transition: all 0.3s ease;
       border-left: 4px solid;
       animation: slideIn 0.3s ease-out forwards;
@@ -111,20 +76,8 @@ import { NotificationService, Notification } from '../../core/services/notificat
       }
     }
 
-    @keyframes slideOut {
-      from {
-        transform: translateX(0);
-        opacity: 1;
-      }
-      to {
-        transform: translateX(400px);
-        opacity: 0;
-      }
-    }
-
     .notification-toast:hover {
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
-      transform: translateX(-4px);
     }
 
     .notification-success {
@@ -151,14 +104,8 @@ import { NotificationService, Notification } from '../../core/services/notificat
       display: flex;
       align-items: flex-start;
       gap: 12px;
+      justify-content: space-between;
       padding: 16px;
-      position: relative;
-    }
-
-    .notification-icon {
-      font-size: 24px;
-      flex-shrink: 0;
-      line-height: 1.5;
     }
 
     .notification-text {
@@ -180,19 +127,10 @@ import { NotificationService, Notification } from '../../core/services/notificat
       word-wrap: break-word;
     }
 
-    .notification-details {
+    .notification-timestamp {
       margin: 6px 0 0 0;
-      font-size: 12px;
-      color: #6b7280;
-      font-style: italic;
-    }
-
-    .notification-description {
-      margin: 6px 0 0 0;
-      font-size: 12px;
-      color: #6b7280;
-      max-height: 50px;
-      overflow-y: auto;
+      font-size: 11px;
+      color: #9ca3af;
     }
 
     .notification-close {
@@ -210,166 +148,42 @@ import { NotificationService, Notification } from '../../core/services/notificat
     .notification-close:hover {
       color: #ef4444;
     }
-
-    .notification-progress {
-      height: 3px;
-      background: linear-gradient(90deg, currentColor 0%, currentColor 100%);
-      animation: progress 8s linear forwards;
-    }
-
-    .notification-danger .notification-progress,
-    .notification-report .notification-progress {
-      animation-duration: 15s;
-    }
-
-    @keyframes progress {
-      from {
-        width: 100%;
-      }
-      to {
-        width: 0%;
-      }
-    }
-
-    .toast-success {
-      --progress-color: #10b981;
-    }
-
-    .toast-warning {
-      --progress-color: #f59e0b;
-    }
-
-    .toast-danger {
-      --progress-color: #ef4444;
-    }
-
-    .notification-read {
-      opacity: 0.7;
-      border-left-color: #9ca3af;
-    }
-
-    .notification-unread-indicator {
-      position: absolute;
-      top: 8px;
-      left: 8px;
-      width: 8px;
-      height: 8px;
-      background: #ef4444;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
-    }
-
-    .notification-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex-shrink: 0;
-    }
-
-    .notification-mark-read {
-      background: #10b981;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      width: 24px;
-      height: 24px;
-      cursor: pointer;
-      font-size: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s;
-    }
-
-    .notification-mark-read:hover {
-      background: #059669;
-    }
-
-    .notification-timestamp {
-      margin: 6px 0 0 0;
-      font-size: 11px;
-      color: #9ca3af;
-      font-style: italic;
-    }
   `],
 })
 export class NotificationsContainerComponent implements OnInit {
   notifications: Notification[] = [];
-  private dismissedNotifications = new Set<string>(); // Track dismissed toast notifications
+  private dismissedToastIds = new Set<string>(); // Track dismissed toasts locally
 
   constructor(private notificationService: NotificationService) {}
 
   ngOnInit(): void {
     this.notificationService.notifications$.subscribe(
       (notifications: Notification[]) => {
-        // Filter out dismissed notifications and read notifications from toast view
-        this.notifications = notifications.filter(n => 
-          !this.dismissedNotifications.has(n.id) && !n.read
-        );
+        // Filter out dismissed toasts, but keep them in the service for sidebar
+        this.notifications = notifications.filter(n => !this.dismissedToastIds.has(n.id));
       }
     );
   }
 
-  async onNotificationClick(notification: Notification): Promise<void> {
-    await this.notificationService.markAsRead(notification.id);
-  }
-
   onClose(event: Event, id: string): void {
     event.stopPropagation();
-    // Just dismiss from toast view, don't remove from global notifications
-    this.dismissedNotifications.add(id);
-    // Update local notifications list to hide the dismissed one
+    // Only dismiss from toast view locally, don't remove from global state
+    this.dismissedToastIds.add(id);
     this.notifications = this.notifications.filter(n => n.id !== id);
-  }
-
-  getRegistrationDetails(notification: Notification): string {
-    const data = notification.data as any;
-    const capacity = data.capacity ? ` / ${data.capacity}` : ' / illimitati';
-    return `${data.currentParticipants}${capacity} partecipanti`;
-  }
-
-  getUnregistrationDetails(notification: Notification): string {
-    const data = notification.data as any;
-    return `${data.currentParticipants} partecipanti rimasti`;
-  }
-
-  getReportDetails(notification: Notification): string {
-    const data = notification.data as any;
-    if (data.reportedEvent) {
-      return `Evento: ${data.reportedEvent.title}`;
-    } else if (data.reportedUser) {
-      return `Utente: @${data.reportedUser.username}`;
-    }
-    return '';
-  }
-
-  async onMarkAsRead(event: Event, notificationId: string): Promise<void> {
-    event.stopPropagation();
-    await this.notificationService.markAsRead(notificationId);
   }
 
   formatTimestamp(timestamp: Date): string {
     const now = new Date();
-    const diff = now.getTime() - timestamp.getTime();
+    const diff = now.getTime() - new Date(timestamp).getTime();
     const minutes = Math.floor(diff / (1000 * 60));
     const hours = Math.floor(diff / (1000 * 60 * 60));
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-    if (minutes < 1) return 'Ora';
-    if (minutes < 60) return `${minutes}m fa`;
-    if (hours < 24) return `${hours}h fa`;
-    if (days < 7) return `${days}g fa`;
+    if (minutes < 1) return 'Just now';
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    if (days < 7) return `${days}d ago`;
     
-    return timestamp.toLocaleDateString();
-  }
-
-  getReportDescription(notification: Notification): string {
-    const data = notification.data as any;
-    return data.description || '';
+    return new Date(timestamp).toLocaleDateString();
   }
 }

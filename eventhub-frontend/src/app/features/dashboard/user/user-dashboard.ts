@@ -373,24 +373,23 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   // Notification methods
-  async loadNotifications(): Promise<void> {
-    // Notifications are loaded automatically via subscription
-    // This method can be used for manual refresh if needed
+  loadNotifications(): void {
+    this.notificationService.refresh();
   }
 
-  async markAsRead(notificationId: string): Promise<void> {
-    await this.notificationService.markAsRead(notificationId);
+  removeNotification(notificationId: string): void {
+    this.notificationService.removeNotification(notificationId);
   }
 
   getRegistrationDetails(notification: Notification): string {
     const data = notification.data as any;
-    const capacity = data.capacity ? ` / ${data.capacity}` : ' / illimitati';
-    return `${data.currentParticipants}${capacity} partecipanti`;
+    const capacity = data.capacity ? ` / ${data.capacity}` : ' / unlimited';
+    return `${data.currentParticipants}${capacity}`;
   }
 
   getUnregistrationDetails(notification: Notification): string {
     const data = notification.data as any;
-    return `${data.currentParticipants} partecipanti rimasti`;
+    return `${data.currentParticipants} participants remaining`;
   }
 
   getReportDetails(notification: Notification): string {
