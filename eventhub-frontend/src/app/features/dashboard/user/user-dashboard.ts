@@ -287,22 +287,22 @@ export class UserDashboard implements OnInit, OnDestroy {
     });
   }
 
-  toggleParticipants(event: Event): void {
-    if (this.participants[event.id]) {
-      delete this.participants[event.id];
+  toggleParticipants(eventId: number): void {
+    if (this.participants[eventId]) {
+      delete this.participants[eventId];
       return;
     }
 
-    this.participantLoading.add(event.id);
-    this.eventService.getParticipants(event.id).subscribe({
+    this.participantLoading.add(eventId);
+    this.eventService.getParticipants(eventId).subscribe({
       next: (data) => {
-        this.participants[event.id] = data;
+        this.participants[eventId] = data;
       },
       error: () => {
         this.myEventsError = 'Unable to load participants';
       },
       complete: () => {
-        this.participantLoading.delete(event.id);
+        this.participantLoading.delete(eventId);
       }
     });
   }

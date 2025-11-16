@@ -2,7 +2,7 @@ import { User } from '../models/index.js';
 import argon2 from 'argon2';
 import { generateToken } from '../utils/token.js';
 import { createVerificationToken, verifyEmailToken } from '../utils/emailTokens.js';
-import { createPasswordResetToken, verifyResetToken } from '../utils/emailTokens.js';
+import { createPasswordResetToken, verifyResetToken, consumeResetToken } from '../utils/emailTokens.js';
 import { sendVerificationEmail, sendPasswordResetEmail } from '../config/email.js';
 import { addToBlacklist } from '../utils/tokenBlacklist.js';
 import { getRedisClient } from '../config/redis.js';
@@ -26,7 +26,6 @@ export async function register(req, res) {
   const verificationToken = await createVerificationToken(email);
   const emailSent = await sendVerificationEmail(email, verificationToken);
   
-  // In development, auto-verify if email service is not configured
   if (!emailSent && process.env.NODE_ENV !== 'production') {
     console.warn(`Email service not configured. Auto-verifying user in ${process.env.NODE_ENV} mode.`);
     newUser.email_verified = true;
@@ -55,7 +54,7 @@ export async function login(req, res) {
   if (user.is_blocked)
     return res.status(403).json({ message: 'User account is blocked' });
 
-  // Check if user registered with OAuth (no password)
+  // Check if user registered with oAuth 
   if (!user.password_hash) {
     return res.status(400).json({ 
       message: 'This account uses OAuth authentication. Please login with Google.' 
@@ -185,7 +184,7 @@ export async function resetPassword(req, res) {
     return res.status(404).json({ message: 'User not found' });
   }
   
-  // Verifica che la nuova password sia diversa da quella attuale
+  // Verifie that new password is different
   if (user.password_hash) {
     try {
       const isSamePassword = await argon2.verify(user.password_hash, newPassword);
@@ -199,6 +198,9 @@ export async function resetPassword(req, res) {
   
   const password_hash = await argon2.hash(newPassword);
   await user.update({ password_hash });
+  
+  // token consumption
+  await consumeResetToken(token);
   
   res.json({ message: 'Password reset successfully. You can now log in.' });
 }

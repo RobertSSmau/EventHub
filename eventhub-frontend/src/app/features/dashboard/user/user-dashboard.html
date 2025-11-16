@@ -234,7 +234,7 @@
                             {{ event.status }}
                           </span>
                           <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-primary" (click)="toggleParticipants(event)">
+                            <button type="button" class="btn btn-outline-primary" (click)="toggleParticipants(event.id)">
                               @if (participants[event.id]) { Hide } @else { View }
                             </button>
                             <button type="button" class="btn btn-outline-danger" (click)="deleteEvent(event)">
@@ -309,12 +309,35 @@
                         <div class="d-flex justify-content-between align-items-center mt-3">
                           <small class="text-muted">Registered on {{ registration.registered_at | date: 'medium' }}</small>
                           @if (registration.event?.id) {
-                            <button type="button" class="btn btn-outline-info btn-sm" (click)="openChat(registration.event!.id)">
-                              Open chat
-                            </button>
+                            <div class="btn-group btn-group-sm">
+                              <button type="button" class="btn btn-outline-primary" (click)="toggleParticipants(registration.event!.id)">
+                                @if (registration.event?.id && participants[registration.event!.id]) { Hide } @else { View }
+                              </button>
+                              <button type="button" class="btn btn-outline-info" (click)="openChat(registration.event!.id)">
+                                Chat
+                              </button>
+                            </div>
                           }
                         </div>
                       </div>
+                      @if (registration.event?.id && participants[registration.event!.id]) {
+                        <div class="card-footer" style="padding: 0.75rem;">
+                          @if (participantLoading.has(registration.event!.id)) {
+                            <div class="text-muted small">Loading...</div>
+                          } @else if (!participants[registration.event!.id]?.length) {
+                            <div class="text-muted small">No participants yet.</div>
+                          } @else {
+                            <div class="small">
+                              <strong>Participants:</strong>
+                              <ul class="list-unstyled mb-0 mt-1">
+                                @for (participant of participants[registration.event!.id]; track participant.id) {
+                                  <li>{{ participant.username }}</li>
+                                }
+                              </ul>
+                            </div>
+                          }
+                        </div>
+                      }
                     </div>
                   </div>
                 }

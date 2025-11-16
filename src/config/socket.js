@@ -1,6 +1,7 @@
 /**
  * Socket.IO configuration and setup
  * Real-time chat functionality
+ * Unfortunately, user is typing or has viewed events are not implemented yet 
  */
 
 import { Server } from 'socket.io';
@@ -23,7 +24,7 @@ const activeUsers = new Map();
 export function initSocketIO(server) {
   // Guard: prevent double initialization
   if (initialized) {
-    console.log('⚠️ Socket.IO already initialized, skipping...');
+    console.log('Socket.IO already initialized, skipping...');
     return io;
   }
   
@@ -88,9 +89,7 @@ export function initSocketIO(server) {
     // Join user's personal room
     socket.join(`user:${socket.userId}`);
 
-    // ===================
     // CONVERSATION EVENTS
-    // ===================
 
     // Join a conversation
     socket.on('conversation:join', async (data) => {
@@ -111,7 +110,7 @@ export function initSocketIO(server) {
         }
 
         socket.join(`conversation:${conversationId}`);
-        console.log(`✅ User ${socket.userId} joined conversation ${conversationId}`);
+        console.log(`User ${socket.userId} joined conversation ${conversationId}`);
       } catch (error) {
         console.error('Error joining conversation:', error);
         socket.emit('error', { message: error.message });
@@ -125,9 +124,7 @@ export function initSocketIO(server) {
       console.log(`User ${socket.userId} left conversation ${conversationId}`);
     });
 
-    // ===================
     // MESSAGE EVENTS
-    // ===================
 
     // Send a message
     socket.on('message:send', async (data) => {
@@ -235,12 +232,10 @@ export function initSocketIO(server) {
       });
     });
 
-    // ===================
     // DISCONNECT
-    // ===================
 
     socket.on('disconnect', () => {
-      console.log(`❌ User ${socket.userId} disconnected`);
+      console.log(`User ${socket.userId} disconnected`);
       activeUsers.delete(socket.userId);
       
       // Emit offline status
@@ -249,7 +244,7 @@ export function initSocketIO(server) {
   });
 
   initialized = true;
-  console.log('✅ Socket.IO initialized');
+  console.log('Socket.IO initialized');
   return io;
 }
 

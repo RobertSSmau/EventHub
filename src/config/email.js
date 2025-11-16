@@ -24,7 +24,7 @@ export async function initEmail() {
   }
 }
 
-// Invia email di verifica account
+// Verify Account Email
 export async function sendVerificationEmail(email, token) {
   if (!emailService) {
     console.warn('Email service non inizializzato');
@@ -35,16 +35,16 @@ export async function sendVerificationEmail(email, token) {
   
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2>Benvenuto su EventHub! 🎉</h2>
-      <p>Grazie per esserti registrato. Clicca sul link per confermare il tuo account:</p>
+      <h2>Welcome to EventHub!</h2>
+      <p>Thank you for registering. Click the link to confirm your account:</p>
       <a href="${verifyUrl}" 
          style="display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">
-        Conferma Account
+        Confirm Account
       </a>
-      <p>Oppure copia questo link nel browser:</p>
+      <p>Or copy this link into your browser:</p>
       <p style="color: #666; font-size: 14px;">${verifyUrl}</p>
       <p style="color: #999; font-size: 12px; margin-top: 30px;">
-        Il link scade tra 24 ore. Se non hai richiesto questa registrazione, ignora questa email.
+        The link expires in 24 hours. If you did not request this registration, please ignore this email.
       </p>
     </div>
   `;
@@ -53,7 +53,7 @@ export async function sendVerificationEmail(email, token) {
     await sgMail.send({
       to: email,
       from: process.env.EMAIL_USER || 'noreply@eventhub.com',
-      subject: 'Conferma il tuo account EventHub',
+      subject: 'Confirm your EventHub account',
       html: htmlContent
     });
     
@@ -65,10 +65,10 @@ export async function sendVerificationEmail(email, token) {
   }
 }
 
-// Invia email reset password
+// reset password
 export async function sendPasswordResetEmail(email, token) {
   if (!emailService) {
-    console.warn('Email service non inizializzato');
+    console.warn('Email service not initialized');
     return null;
   }
   
@@ -77,15 +77,15 @@ export async function sendPasswordResetEmail(email, token) {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2>Reset Password</h2>
-      <p>Hai richiesto il reset della password. Clicca sul link per impostare una nuova password:</p>
+      <p>You have requested a password reset. Click the link to set a new password:</p>
       <a href="${resetUrl}" 
          style="display: inline-block; padding: 12px 24px; background: #dc3545; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0;">
         Reset Password
       </a>
-      <p>Oppure copia questo link nel browser:</p>
+      <p>Or copy this link into your browser:</p>
       <p style="color: #666; font-size: 14px;">${resetUrl}</p>
       <p style="color: #999; font-size: 12px; margin-top: 30px;">
-        Il link scade tra 1 ora. Se non hai richiesto il reset, ignora questa email e la tua password rimarrà invariata.
+        The link expires in 1 hour. If you did not request the reset, ignore this email and your password will remain unchanged.
       </p>
     </div>
   `;
@@ -98,10 +98,10 @@ export async function sendPasswordResetEmail(email, token) {
       html: htmlContent
     });
     
-    console.log('Email reset inviata a:', email);
+    console.log('Email reset sent to:', email);
     return { success: true };
   } catch (error) {
-    console.error('Errore invio email reset:', error.message);
+    console.error('Error sending reset email:', error.message);
     return null;
   }
 }

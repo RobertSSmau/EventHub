@@ -8,7 +8,7 @@ if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
   console.warn('Google OAuth credentials not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.');
 }
 
-// Configure Passport Google Strategy
+// Configure Passport 
 const googleStrategy = new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -17,11 +17,9 @@ const googleStrategy = new GoogleStrategy({
 async (accessToken, refreshToken, profile, done) => {
   console.log('Google OAuth callback received:', { profileId: profile.id, email: profile.emails[0].value });
   try {
-    // Check if user already exists with this Google ID
     let user = await User.findOne({ where: { google_id: profile.id } });
 
     if (user) {
-      // User exists, return user
       return done(null, user);
     }
 

@@ -67,11 +67,22 @@ export async function createPasswordResetToken(email) {
 export async function verifyResetToken(token) {
   if (!redis) return null;
   
-  const email = await redis.get(`reset:${token}`);
-  
-  if (email) {
-    await redis.del(`reset:${token}`); // Token usa-e-getta
+  try {
+    const email = await redis.get(`reset:${token}`);
+    return email;
+  } catch (error) {
+    console.error('Error verifying reset token:', error.message);
+    return null;
   }
+}
+
+// Consuma token reset password (lo rimuove da Redis)
+export async function consumeResetToken(token) {
+  if (!redis) return null;
   
-  return email;
+  try {
+    await redis.del(`reset:${token}`);
+  } catch (error) {
+    console.error('Error consuming reset token:', error.message);
+  }
 }

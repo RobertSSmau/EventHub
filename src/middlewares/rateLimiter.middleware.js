@@ -89,10 +89,10 @@ export const logoutLimiter = rateLimit({
   store: createRedisStore('rl:logout:'),
 });
 
-// Email sending limiter (3 emails per hour)
+// Email sending limiter (20 emails per hour for testing)
 export const emailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 3,
+  max: 20,
   message: 'Too many emails sent, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,

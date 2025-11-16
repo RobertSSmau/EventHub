@@ -17,7 +17,7 @@ export async function connectMongoDB() {
     const mongoUrl = process.env.MONGODB_URL;
 
     if (!mongoUrl) {
-      console.warn('⚠️  MONGODB_URL not found, chat features disabled');
+      console.warn('MONGODB_URL not found, chat features disabled');
       return null;
     }
 
@@ -28,7 +28,7 @@ export async function connectMongoDB() {
     });
 
     isConnected = true;
-    console.log('✅ MongoDB connected successfully');
+    console.log('MongoDB connected successfully');
 
     mongoose.connection.on('error', (err) => {
       console.error('MongoDB error:', err);
@@ -43,7 +43,7 @@ export async function connectMongoDB() {
     return mongoose.connection;
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error.message);
-    console.warn('⚠️  Chat features will be disabled');
+    console.warn('Chat features will be disabled');
     return null;
   }
 }
