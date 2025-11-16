@@ -25,6 +25,7 @@
     "argon2": "^0.44.0",
     "celebrate": "^15.0.3",
     "compression": "^1.8.1",
+    "connect-redis": "^9.0.0",
     "cors": "^2.8.5",
     "dotenv-safe": "^9.1.0",
     "express": "^4.21.2",

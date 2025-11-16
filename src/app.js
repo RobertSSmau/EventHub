@@ -12,6 +12,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 import session from 'express-session';
+import RedisStore from 'connect-redis';
+import { getRedisClient } from './config/redis.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,7 +52,8 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 }
 
 // Session middleware (required for Passport OAuth)
-app.use(session({
+const redisClient = getRedisClient();
+const sessionConfig = {
   secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
@@ -60,7 +63,21 @@ app.use(session({
     sameSite: 'lax', // Critico per OAuth redirect
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
-}));
+};
+
+// Use Redis as session store if available, otherwise fallback to MemoryStore
+if (redisClient) {
+  sessionConfig.store = new RedisStore({
+    client: redisClient,
+    prefix: 'session:',
+    ttl: 24 * 60 * 60 // 24 hours in seconds
+  });
+  console.log('Using Redis as session store');
+} else {
+  console.warn('Redis not available, using MemoryStore for sessions (not recommended for production)');
+}
+
+app.use(session(sessionConfig));
 
 // Initialize Passport
 app.use(passport.initialize());
