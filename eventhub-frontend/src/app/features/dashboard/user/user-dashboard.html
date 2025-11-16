@@ -399,15 +399,7 @@
                 </div>
               }
 
-              <!-- Filtri esistenti -->
-              <div class="col-md-3">
-                <select class="form-select" [(ngModel)]="selectedCategory" (change)="onFilterChange()">
-                  <option value="">All categories</option>
-                  @for (category of categories; track category) {
-                    <option [value]="category">{{ category }}</option>
-                  }
-                </select>
-              </div>
+
             </div>
 
             @if (availableEventsLoading) {

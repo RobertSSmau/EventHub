@@ -58,9 +58,7 @@ export class UserDashboard implements OnInit, OnDestroy {
   searchType: 'title' | 'category' | 'location' | 'dateRange' = 'title';
   dateFrom = '';
   dateTo = '';
-  selectedCategory = '';
   selectedStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | '' = 'APPROVED';
-  categories: string[] = ['Tech', 'Business', 'Art', 'Sports', 'Education', 'Other'];
 
   activeSection: 'create' | 'my-events' | 'registrations' | 'browse' | 'notifications' = 'my-events';
 
@@ -155,7 +153,6 @@ export class UserDashboard implements OnInit, OnDestroy {
     
     const filters: any = {};
     if (this.selectedStatus) filters.status = this.selectedStatus;
-    if (this.selectedCategory) filters.category = this.selectedCategory;
     
     // Aggiungi filtri di ricerca basati sul tipo selezionato
     if (this.searchQuery.trim()) {
@@ -199,10 +196,6 @@ export class UserDashboard implements OnInit, OnDestroy {
   }
 
   private performSearch(searchTerm: string): void {
-    this.loadAvailableEvents();
-  }
-
-  onFilterChange(): void {
     this.loadAvailableEvents();
   }
 
