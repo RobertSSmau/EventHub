@@ -81,7 +81,7 @@ export async function getNotificationCount(req, res) {
 
     const notifications = await getUserNotifications(userId, {
       unreadOnly: unreadOnly === 'true',
-      limit: 1000 // Alto limite per contare
+      limit: 1000 
     });
 
     res.json({

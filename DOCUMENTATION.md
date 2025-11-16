@@ -680,6 +680,3 @@ Full API reference at: http://localhost:3000/api/docs
 
 ---
 
-## License
-
-ISC

@@ -61,7 +61,7 @@ export async function initRedis() {
     return redisClient;
   } catch (error) {
     console.error('Failed to initialize Redis:', error.message);
-    console.warn('⚠️  Continuing with memory-based rate limiting');
+    console.warn('Continuing with memory-based rate limiting');
     redisClient = null;
     return null;
   }

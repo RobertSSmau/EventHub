@@ -18,11 +18,8 @@ npm install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your database credentials
 
-# Initialize database
-createdb eventhub
-psql -U postgres -d eventhub -f SCHEMA.sql
+# Edit .env with your database credentials
 
 # Start backend
 npm run dev          # Development

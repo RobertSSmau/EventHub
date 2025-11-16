@@ -34,18 +34,19 @@ export class VerifyEmail implements OnInit {
         this.status = 'success';
         this.message = response.message;
         
-        // Auto-login: save token and user to localStorage
+        // Check if token provided (OAuth users get auto-login, email users go to login page)
         if (response.token && response.user) {
           localStorage.setItem('token', response.token);
           localStorage.setItem('user', JSON.stringify(response.user));
-          console.log('🔐 Token salvato, redirecting to dashboard...');
+          console.log('🔐 OAuth user: token saved, redirecting to dashboard...');
           
           // Redirect to dashboard after 2 seconds
           setTimeout(() => {
             this.router.navigate(['/dashboard']);
           }, 2000);
         } else {
-          // Fallback to login if no token
+          // Email verification: redirect to login page
+          console.log('📧 Email verified: redirecting to login page...');
           setTimeout(() => {
             this.router.navigate(['/login']);
           }, 3000);
