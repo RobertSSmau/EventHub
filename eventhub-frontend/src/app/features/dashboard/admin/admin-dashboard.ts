@@ -80,6 +80,15 @@ export class AdminDashboard implements OnInit, OnDestroy {
     this.loadReports();
     // loadUsers is called in setActiveSection when users tab is selected
 
+    // Subscribe to notifications
+    this.subs.push(
+      this.notificationService.notifications$.subscribe(
+        (notifications: Notification[]) => {
+          this.notifications = notifications;
+        }
+      )
+    );
+
     // Configure search debounce
     this.subs.push(
       this.searchSubject
@@ -246,7 +255,8 @@ export class AdminDashboard implements OnInit, OnDestroy {
       };
       this.loadUsers();
     } else if (section === 'notifications') {
-      this.notifications = []; // Ensure it's always an array
+      // Notifications are already loaded via NotificationService.initialize()
+      // Just refresh if needed
       this.loadNotifications();
     }
     // Chiudi il menu mobile quando si seleziona una sezione

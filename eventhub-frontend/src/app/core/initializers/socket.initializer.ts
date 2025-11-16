@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { SocketService } from '../services/socket';
 import { AuthService } from '../services/auth';
+import { NotificationService } from '../services/notification.service';
 
 /**
  * Socket initializer provider
@@ -8,15 +9,25 @@ import { AuthService } from '../services/auth';
  */
 @Injectable({ providedIn: 'root' })
 export class SocketInitializer {
-  constructor(private socketService: SocketService, private authService: AuthService) {}
+  constructor(
+    private socketService: SocketService, 
+    private authService: AuthService,
+    private notificationService: NotificationService
+  ) {}
 
-  init(): void {
-    // Connect socket if user is authenticated
-    if (this.authService.isAuthenticated) {
-      console.log('🔌 Initializing global socket connection...');
+  async init(): Promise<void> {
+    // Only connect if user is already authenticated from localStorage
+    const token = this.authService.getToken();
+    const isAuthenticated = this.authService.isAuthenticated;
+    
+    if (token && isAuthenticated) {
+      console.log('🔌 User already authenticated, connecting socket...');
       this.socketService.connect();
+      
+      console.log('🔔 Initializing notifications for existing session...');
+      await this.notificationService.initialize();
     } else {
-      console.log('⏭️ Socket connection skipped: user not authenticated');
+      console.log('⏭️ Socket connection skipped: user not authenticated (will connect on login)');
     }
   }
 }

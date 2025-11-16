@@ -112,16 +112,22 @@ export class SocketService {
   connect(force = false): void {
     const token = this.authService.getToken();
     if (!token) {
-      console.warn('Socket connection skipped: no token available');
+      console.warn('⚠️ Socket connection skipped: no token available');
       return;
     }
 
     if (this.socket?.connected && !force) {
+      console.log('✅ Socket already connected');
       return;
     }
 
-    this.socket?.disconnect();
+    // Disconnect existing socket before creating new one
+    if (this.socket) {
+      console.log('🔄 Disconnecting existing socket before reconnecting...');
+      this.socket.disconnect();
+    }
 
+    console.log('🔌 Connecting to socket server...');
     this.socket = io(environment.socketUrl, {
       auth: { token },
       transports: ['websocket', 'polling'], // Prefer websocket for faster communication
@@ -138,6 +144,7 @@ export class SocketService {
 
   disconnect(): void {
     if (this.socket) {
+      console.log('🔌 Disconnecting socket...');
       this.socket.disconnect();
       this.socket = null;
     }
@@ -169,14 +176,20 @@ export class SocketService {
   private registerCoreHandlers(): void {
     if (!this.socket) return;
 
+    // Remove all existing listeners to prevent duplicates
+    this.socket.removeAllListeners();
+
     this.socket.on('connect', () => {
-      console.log('Socket connected');
+      console.log('✅ Socket connected successfully');
       this.reconnectSubject.next();
     });
-    this.socket.on('disconnect', () => console.log('Socket disconnected'));
+    
+    this.socket.on('disconnect', (reason) => {
+      console.log('❌ Socket disconnected:', reason);
+    });
 
     this.socket.on('error', (error: any) => {
-      console.error('Socket error:', error);
+      console.error('❌ Socket error:', error);
       this.errorSubject.next(error?.message ?? 'Socket error');
     });
 
@@ -210,17 +223,17 @@ export class SocketService {
 
     // 🔔 Notification handlers with debug logs
     this.socket.on('event:new_registration', (payload: RegistrationNotification) => {
-      console.log('📨 Socket ricevuto: event:new_registration', payload);
+      console.log('📨 Socket event received: event:new_registration', payload);
       this.registrationSubject.next(payload);
     });
 
     this.socket.on('event:unregistration', (payload: UnregistrationNotification) => {
-      console.log('📨 Socket ricevuto: event:unregistration', payload);
+      console.log('📨 Socket event received: event:unregistration', payload);
       this.unregistrationSubject.next(payload);
     });
 
     this.socket.on('report:new', (payload: ReportNotification) => {
-      console.log('📨 Socket ricevuto: report:new', payload);
+      console.log('📨 Socket event received: report:new', payload);
       this.reportSubject.next(payload);
     });
   }

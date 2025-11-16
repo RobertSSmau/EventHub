@@ -48,6 +48,20 @@ export async function getAllEvents(req, res) {
 }
 
 /**
+ * @desc Gets events created by the logged-in user
+ * @route GET /api/events/mine
+ */
+export async function getMyEvents(req, res) {
+  try {
+    const events = await eventService.getUserEvents(req.user.id);
+    res.json(events);
+  } catch (error) {
+    console.error('Error fetching user events:', error);
+    res.status(500).json({ message: 'Error fetching events' });
+  }
+}
+
+/**
  * @desc Gets single event by ID
  * @route GET /api/events/:id
  */
@@ -124,20 +138,6 @@ export async function rejectEvent(req, res) {
     console.error('Error rejecting event:', error);
     const status = error.message === 'Event not found' ? 404 : 500;
     res.status(status).json({ message: error.message });
-  }
-}
-
-/**
- * @desc Gets all events created by logged user
- * @route GET /api/events/mine
- */
-export async function getMyEvents(req, res) {
-  try {
-    const events = await eventService.getUserEvents(req.user.id);
-    res.json(events);
-  } catch (error) {
-    console.error('Error fetching user events:', error);
-    res.status(500).json({ message: 'Error fetching events' });
   }
 }
 

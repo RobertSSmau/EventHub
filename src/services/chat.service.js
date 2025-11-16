@@ -49,17 +49,22 @@ export async function createEventGroupConversation(userId, eventId) {
     throw new Error('Event not found');
   }
 
+  // Check if user is registered for the event
+  const registration = await Registration.findOne({
+    where: { user_id: userId, event_id: eventId },
+  });
+  if (!registration) {
+    throw new Error('You must be registered for this event to join the chat');
+  }
+
   // Get all registered users for this event
   const registrations = await Registration.findAll({
     where: { event_id: eventId },
     attributes: ['user_id'],
   });
 
-  // Extract user IDs and ensure current user is included
+  // Extract user IDs
   const participantIds = registrations.map(reg => reg.user_id);
-  if (!participantIds.includes(userId)) {
-    participantIds.push(userId);
-  }
 
   // Need at least 2 participants for a conversation
   if (participantIds.length < 2) {

@@ -19,15 +19,50 @@ export interface Notification {
 export class NotificationService {
   private notifications = new BehaviorSubject<Notification[]>([]);
   public notifications$ = this.notifications.asObservable();
+  private isInitialized = false;
 
   constructor(private socketService: SocketService, private api: ApiService) {
-    this.initializeListeners();
-    this.loadStoredNotifications();
+    // Setup socket listeners immediately when service is created
+    // This ensures we don't miss any real-time events
+    this.initializeSocketListeners();
   }
 
-  private initializeListeners(): void {
+  /**
+   * Initialize notification system for current user
+   * Loads notifications from MongoDB + listens to socket
+   */
+  async initialize(): Promise<void> {
+    if (this.isInitialized) {
+      console.log('⚠️ NotificationService already initialized, reloading...');
+      // Even if initialized, reload to get fresh data for current user
+      await this.loadFromBackend();
+      return;
+    }
+
+    console.log('📬 Initializing NotificationService for current user...');
+    
+    // Clear any previous state
+    this.notifications.next([]);
+    
+    // Load notifications from MongoDB for current user
+    await this.loadFromBackend();
+    
+    this.isInitialized = true;
+  }
+
+  /**
+   * Reset notification system (call on logout)
+   */
+  reset(): void {
+    console.log('🔄 Resetting NotificationService...');
+    this.notifications.next([]);
+    this.isInitialized = false;
+  }
+
+  private initializeSocketListeners(): void {
     // Listen to registration notifications
     this.socketService.registration$.subscribe((data: RegistrationNotification) => {
+      console.log('📨 Real-time registration notification:', data);
       this.addNotification({
         type: 'registration',
         title: `New registration`,
@@ -39,6 +74,7 @@ export class NotificationService {
 
     // Listen to unregistration notifications
     this.socketService.unregistration$.subscribe((data: UnregistrationNotification) => {
+      console.log('📨 Real-time unregistration notification:', data);
       this.addNotification({
         type: 'unregistration',
         title: `Registration cancelled`,
@@ -50,6 +86,7 @@ export class NotificationService {
 
     // Listen to report notifications
     this.socketService.report$.subscribe((data: ReportNotification) => {
+      console.log('📨 Real-time report notification:', data);
       const target = data.reportedEvent
         ? `event "${data.reportedEvent.title}"`
         : `user @${data.reportedUser?.username}`;
@@ -71,15 +108,18 @@ export class NotificationService {
       timestamp: new Date(),
     };
 
-    console.log('Notification received:', config.type, config.title);
-
     const current = this.notifications.value;
-    this.notifications.next([...current, notification]);
+    this.notifications.next([notification, ...current]);
   }
 
-  private async loadStoredNotifications(): Promise<void> {
+  /**
+   * Load notifications from MongoDB for current logged user
+   */
+  private async loadFromBackend(): Promise<void> {
     try {
+      console.log('📥 Loading notifications from MongoDB...');
       const response = await this.api.get<{ success: boolean; notifications: any[] }>('/notifications?unreadOnly=false&limit=100').toPromise();
+      
       if (response?.success && response.notifications) {
         const storedNotifications: Notification[] = response.notifications.map(n => ({
           id: n.id,
@@ -92,16 +132,18 @@ export class NotificationService {
         }));
 
         this.notifications.next(storedNotifications);
-        console.log(`Loaded ${storedNotifications.length} notifications`);
+        console.log(`✅ Loaded ${storedNotifications.length} notifications for current user`);
       }
     } catch (error) {
-      console.error('Error loading notifications:', error);
+      console.error('❌ Error loading notifications:', error);
     }
   }
 
-  // Public method to refresh notifications
+  /**
+   * Reload notifications from backend
+   */
   async refresh(): Promise<void> {
-    await this.loadStoredNotifications();
+    await this.loadFromBackend();
   }
 
   removeNotification(id: string): void {
@@ -114,12 +156,8 @@ export class NotificationService {
       const response = await this.api.get<{ success: boolean; count: number }>('/notifications/count?unreadOnly=true').toPromise();
       return response?.success ? response.count : 0;
     } catch (error) {
-      console.error('Errore nel conteggio notifiche non lette:', error);
+      console.error('❌ Error getting unread count:', error);
       return 0;
     }
-  }
-
-  clearAll(): void {
-    this.notifications.next([]);
   }
 }

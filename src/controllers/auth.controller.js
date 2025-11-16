@@ -185,10 +185,22 @@ export async function resetPassword(req, res) {
     return res.status(404).json({ message: 'User not found' });
   }
   
+  // Verifica che la nuova password sia diversa da quella attuale
+  if (user.password_hash) {
+    try {
+      const isSamePassword = await argon2.verify(user.password_hash, newPassword);
+      if (isSamePassword) {
+        return res.status(400).json({ message: 'New password must be different from the current password' });
+      }
+    } catch (error) {
+      console.error('Error verifying password:', error);
+    }
+  }
+  
   const password_hash = await argon2.hash(newPassword);
   await user.update({ password_hash });
   
-  res.json({ message: 'Password reset successful. You can now log in.' });
+  res.json({ message: 'Password reset successfully. You can now log in.' });
 }
 
 /**

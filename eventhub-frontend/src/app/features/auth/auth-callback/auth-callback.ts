@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/auth';
 import { ApiService } from '../../../core/services/api';
+import { SocketService } from '../../../core/services/socket';
+import { NotificationService } from '../../../core/services/notification.service';
 import { User } from '../../../shared/models/user.model';
 
 @Component({
@@ -19,7 +21,9 @@ export class AuthCallback implements OnInit {
   constructor(
     private router: Router,
     private authService: AuthService,
-    private api: ApiService
+    private api: ApiService,
+    private socketService: SocketService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -73,6 +77,18 @@ export class AuthCallback implements OnInit {
         
         this.status = 'success';
         console.log('Authentication data stored, redirecting...');
+        
+        // 🔌 Connect socket after Google login
+        console.log('🔌 Connecting socket after Google authentication...');
+        this.socketService.connect(true);
+        
+        // 🔔 Initialize notifications for this user
+        console.log('🔔 Initializing notifications for Google user...');
+        this.notificationService.initialize().then(() => {
+          console.log('✅ Notifications initialized successfully');
+        }).catch(err => {
+          console.error('❌ Error initializing notifications:', err);
+        });
         
         // Redirect to dashboard
         const redirect = authData.user.role === 'ADMIN' ? '/admin' : '/dashboard';

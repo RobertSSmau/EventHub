@@ -70,12 +70,15 @@ app.use(passport.session());
 app.use(express.static(path.join(__dirname, '..')));
 
 // Apply global rate limiter (skip chat endpoints for real-time usage)
-app.use('/api', (req, res, next) => {
-  if (req.path.startsWith('/chat')) {
-    return next(); // Skip rate limiting for chat
-  }
-  return generalLimiter(req, res, next);
-});
+// Disable in development mode to allow frequent testing
+if (process.env.NODE_ENV === 'production') {
+  app.use('/api', (req, res, next) => {
+    if (req.path.startsWith('/chat')) {
+      return next(); // Skip rate limiting for chat
+    }
+    return generalLimiter(req, res, next);
+  });
+}
 
 // Health check
 app.get('/api/health', async (req, res) => {

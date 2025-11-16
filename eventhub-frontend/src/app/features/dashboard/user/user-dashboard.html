@@ -414,6 +414,9 @@
                         <div class="d-flex justify-content-between align-items-center mt-3">
                           <div>
                             <small class="text-muted d-block">Capacity: {{ event.capacity || 'Unlimited' }}</small>
+                            @if (event.capacity) {
+                              <small class="text-muted d-block">Registered: {{ event.participantCount || 0 }}/{{ event.capacity }}</small>
+                            }
                           </div>
                           <div class="btn-group btn-group-sm">
                             @if (!isRegisteredForEvent(event.id)) {
@@ -421,7 +424,7 @@
                                 type="button"
                                 class="btn btn-primary btn-sm"
                                 (click)="registerForEvent(event)"
-                                [disabled]="event.status !== 'APPROVED'">
+                                [disabled]="event.status !== 'APPROVED' || (event.capacity && (event.participantCount || 0) >= event.capacity)">
                                 Register
                               </button>
                             } @else {
@@ -429,9 +432,6 @@
                                 Registered
                               </button>
                             }
-                            <button type="button" class="btn btn-outline-info btn-sm" (click)="openChat(event.id)">
-                              Chat
-                            </button>
                           </div>
                         </div>
                       </div>

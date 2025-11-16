@@ -16,6 +16,7 @@ export interface Event {
   creator?: Pick<User, 'id' | 'username' | 'email'>;
   created_at?: string;
   updated_at?: string;
+  participantCount?: number;
 }
 
 export interface CreateEventRequest {

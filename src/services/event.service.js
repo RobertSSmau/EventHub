@@ -3,7 +3,7 @@
  * Business logic for event operations
  */
 
-import { Event, User, Registration } from '../models/index.js';
+import { Event, User, Registration, sequelize } from '../models/index.js';
 import { Op } from 'sequelize';
 import { userDTO } from '../dto/user.dto.js';
 
@@ -11,13 +11,29 @@ import { userDTO } from '../dto/user.dto.js';
  * Create a new event
  */
 export async function createEvent(userId, eventData) {
-  const event = await Event.create({
-    ...eventData,
-    creator_id: userId,
-    status: 'PENDING',
-  });
+  const transaction = await sequelize.transaction();
 
-  return event;
+  try {
+    // Create the event
+    const event = await Event.create({
+      ...eventData,
+      creator_id: userId,
+      status: 'PENDING',
+    }, { transaction });
+
+    // Automatically register the creator as a participant
+    await Registration.create({
+      user_id: userId,
+      event_id: event.id,
+    }, { transaction });
+
+    await transaction.commit();
+
+    return event;
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 }
 
 /**
@@ -68,8 +84,21 @@ export async function getAllEvents(filters = {}, userRole = null) {
     order: [['date', 'ASC']],
   });
 
+  // Add participant count to each event
+  const eventsWithCount = await Promise.all(
+    rows.map(async (event) => {
+      const participantCount = await Registration.count({
+        where: { event_id: event.id }
+      });
+      return {
+        ...event.toJSON(),
+        participantCount
+      };
+    })
+  );
+
   return {
-    events: rows,
+    events: eventsWithCount,
     total: count,
     limit: parseInt(limit),
     offset: parseInt(offset),

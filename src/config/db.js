@@ -18,7 +18,7 @@ export const sequelize = new Sequelize(
         rejectUnauthorized: false, 
       },
     },
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    logging: false, // Disattivato per ridurre spam - usa 'true' solo se necessario debug
   }
 );
 

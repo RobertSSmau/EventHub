@@ -1,5 +1,18 @@
 # Production Checklist
 
+## 🔔 Socket.IO Real-Time Notifications (CRITICAL - FIXED!)
+**Status**: ✅ Risolto - Vedi `SOCKET_FIXES.md` per dettagli
+
+**Cosa è stato fixato:**
+1. **CORS configurato correttamente** - `src/config/socket.js` ora usa `FRONTEND_URL` fallback
+2. **Socket si connette al login** - `auth.ts` chiama `socketService.connect()` dopo login
+3. **Socket si disconnette al logout** - `auth.ts` chiama `socketService.disconnect()` al logout
+4. **Socket initializer affidabile** - Legge localStorage direttamente
+
+**Per testare:**
+- Vedi `SOCKET_FIXES.md` sezione "🧪 Come Testare"
+- Assicurati che `FRONTEND_URL` sia settato nel `.env`
+
 ## Security
 
 ### Email Verification (IMPORTANT!)
@@ -16,7 +29,8 @@
 
 ### CORS
 **File**: `src/config/socket.js` e `src/app.js`
-- [ ] Cambia `CLIENT_URL` da `http://localhost:3000` al dominio production
+- [x] ✅ **FIXATO** - Socket CORS usa `FRONTEND_URL` con fallback
+- [ ] Cambia `FRONTEND_URL` dal `.env` al dominio production
 - [ ] Aggiungi solo domini specifici, mai `*`
 
 ## Environment Variables

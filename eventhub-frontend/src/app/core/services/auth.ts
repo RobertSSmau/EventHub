@@ -1,6 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { BehaviorSubject, Observable, catchError, finalize, map, of, tap } from 'rxjs';
 import { ApiService } from './api';
+import { SocketService } from './socket';
+import { NotificationService } from './notification.service';
 import { User, LoginRequest, RegisterRequest, AuthResponse } from '../../shared/models/user.model';
 import { environment } from '../../../environments/environment';
 
@@ -10,9 +12,25 @@ import { environment } from '../../../environments/environment';
 export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
+  private socketService: SocketService | null = null;
+  private notificationService: NotificationService | null = null;
 
-  constructor(private api: ApiService) {
+  constructor(private api: ApiService, private injector: Injector) {
     this.loadUserFromStorage();
+  }
+
+  private getSocketService(): SocketService {
+    if (!this.socketService) {
+      this.socketService = this.injector.get(SocketService);
+    }
+    return this.socketService;
+  }
+
+  private getNotificationService(): NotificationService {
+    if (!this.notificationService) {
+      this.notificationService = this.injector.get(NotificationService);
+    }
+    return this.notificationService;
   }
 
   get currentUser(): User | null {
@@ -29,13 +47,13 @@ export class AuthService {
 
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.api.post<AuthResponse>('/auth/login', credentials).pipe(
-      tap(response => this.handleAuthResponse(response))
+      tap(async response => await this.handleAuthResponse(response))
     );
   }
 
   register(data: RegisterRequest): Observable<AuthResponse> {
     return this.api.post<AuthResponse>('/auth/register', data).pipe(
-      tap(response => this.handleAuthResponse(response))
+      tap(async response => await this.handleAuthResponse(response))
     );
   }
 
@@ -48,6 +66,20 @@ export class AuthService {
       finalize(() => this.clearAuthState()),
       map(() => void 0)
     );
+  }
+
+  private clearAuthState(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    this.currentUserSubject.next(null);
+    
+    // 🔌 Disconnect socket when user logs out
+    console.log('🔌 User logged out, disconnecting socket...');
+    this.getSocketService().disconnect();
+    
+    // 🔔 Reset notifications
+    console.log('🔔 Resetting notifications...');
+    this.getNotificationService().reset();
   }
 
   resendVerification(email: string): Observable<{ message: string }> {
@@ -78,10 +110,18 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
-  private handleAuthResponse(response: AuthResponse): void {
+  private async handleAuthResponse(response: AuthResponse): Promise<void> {
     localStorage.setItem('token', response.token);
     localStorage.setItem('user', JSON.stringify(response.user));
     this.currentUserSubject.next(response.user);
+    
+    // 🔌 Connect socket immediately after successful login/register
+    console.log('🔌 User authenticated, connecting socket...');
+    this.getSocketService().connect();
+    
+    // 🔔 Initialize notifications for this user
+    console.log('🔔 Initializing notifications for user...');
+    await this.getNotificationService().initialize();
   }
 
   private loadUserFromStorage(): void {
@@ -96,9 +136,11 @@ export class AuthService {
     }
   }
 
-  private clearAuthState(): void {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    this.currentUserSubject.next(null);
+  isLoggedIn(): boolean {
+    return !!this.getToken();
+  }
+
+  getCurrentUser(): User | null {
+    return this.currentUserSubject.value;
   }
 }

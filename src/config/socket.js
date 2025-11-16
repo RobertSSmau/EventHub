@@ -12,6 +12,7 @@ import { enrichMessages } from '../dto/chat.dto.js';
 import { isBlacklisted } from '../utils/tokenBlacklist.js';
 
 let io = null;
+let initialized = false;
 
 // Store active users: userId -> socketId
 const activeUsers = new Map();
@@ -20,11 +21,28 @@ const activeUsers = new Map();
  * Initialize Socket.IO server
  */
 export function initSocketIO(server) {
+  // Guard: prevent double initialization
+  if (initialized) {
+    console.log('⚠️ Socket.IO already initialized, skipping...');
+    return io;
+  }
+  
+  // Determine correct origin based on environment
+  const getSocketOrigin = () => {
+    if (process.env.NODE_ENV === 'production') {
+      // In production, use FRONTEND_URL if set, otherwise fallback to common patterns
+      return process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://yourdomain.com';
+    }
+    // In development, allow localhost
+    return process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:4200';
+  };
+
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || process.env.NODE_ENV === 'production' ? '*' : 'http://localhost:3000',
+      origin: getSocketOrigin(),
       methods: ['GET', 'POST'],
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization'],
     },
     pingTimeout: 20000, // Reduced from 60000
     pingInterval: 25000, // Keep alive interval
@@ -230,6 +248,7 @@ export function initSocketIO(server) {
     });
   });
 
+  initialized = true;
   console.log('✅ Socket.IO initialized');
   return io;
 }

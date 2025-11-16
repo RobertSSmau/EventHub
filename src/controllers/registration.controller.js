@@ -1,4 +1,4 @@
-import { Registration, Event, User } from '../models/index.js';
+import { Registration, Event, User, sequelize } from '../models/index.js';
 import { getIO } from '../config/socket.js';
 import { saveNotification } from '../services/notification.service.js';
 
@@ -10,11 +10,16 @@ export async function registerToEvent(req, res) {
   const { eventId } = req.params;
   const userId = req.user.id;
 
-  // Event exists or approved
+  // Event exists
   const event = await Event.findByPk(eventId, {
     include: { model: User, as: 'creator', attributes: ['id', 'username'] }
   });
-  if (!event || event.status !== 'APPROVED') {
+  if (!event) {
+    return res.status(404).json({ message: 'Event not found' });
+  }
+
+  // Allow registration if event is approved OR if user is the creator
+  if (event.status !== 'APPROVED' && event.creator_id !== userId) {
     return res.status(404).json({ message: 'Event not found or not approved' });
   }
 
@@ -24,52 +29,67 @@ export async function registerToEvent(req, res) {
     return res.status(400).json({ message: 'Already registered to this event' });
   }
 
-  // Check capacity
-  const count = await Registration.count({ where: { event_id: eventId } });
-  if (event.capacity && count >= event.capacity) {
-    return res.status(400).json({ message: 'Event is full' });
-  }
+  // Use transaction to prevent race conditions
+  const transaction = await sequelize.transaction();
 
-  // Register user
-  const registration = await Registration.create({ user_id: userId, event_id: eventId });
-  
-  // 🔔 REAL-TIME NOTIFICATION to event creator
   try {
-    const io = getIO();
-    const user = await User.findByPk(userId, { attributes: ['id', 'username', 'email'] });
+    // Check capacity within transaction
+    const count = await Registration.count({ where: { event_id: eventId }, transaction });
+    if (event.capacity && count >= event.capacity) {
+      await transaction.rollback();
+      return res.status(400).json({ message: 'Event is full' });
+    }
 
-    const notificationData = {
-      eventId: event.id,
-      eventTitle: event.title,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email
-      },
-      registeredAt: registration.registered_at,
-      currentParticipants: count + 1,
-      capacity: event.capacity
-    };
+    // Register user within transaction
+    const registration = await Registration.create(
+      { user_id: userId, event_id: eventId },
+      { transaction }
+    );
 
-    // Notify event creator
-    io.to(`user:${event.creator_id}`).emit('event:new_registration', notificationData);
+    await transaction.commit();
 
-    // 💾 Save notification to MongoDB
-    await saveNotification({
-      userId: event.creator_id,
-      type: 'registration',
-      title: 'Nuova iscrizione',
-      message: `${user.username} si è iscritto a "${event.title}"`,
-      icon: '✅',
-      color: 'success',
-      data: notificationData
-    });
+    // 🔔 REAL-TIME NOTIFICATION to event creator
+    try {
+      const io = getIO();
+      const user = await User.findByPk(userId, { attributes: ['id', 'username', 'email'] });
+
+      const notificationData = {
+        eventId: event.id,
+        eventTitle: event.title,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email
+        },
+        registeredAt: registration.registered_at,
+        currentParticipants: count + 1,
+        capacity: event.capacity
+      };
+
+      // Notify event creator
+      io.to(`user:${event.creator_id}`).emit('event:new_registration', notificationData);
+
+      // 💾 Save notification to MongoDB
+      await saveNotification({
+        userId: event.creator_id,
+        type: 'registration',
+        title: 'Nuova iscrizione',
+        message: `${user.username} si è iscritto a "${event.title}"`,
+        icon: '✅',
+        color: 'success',
+        data: notificationData
+      });
+    } catch (error) {
+      console.error('Error sending real-time notification:', error);
+      // Don't fail the request if notification fails
+    }
+    
+    res.status(201).json({ message: 'Registration successful', registration });
   } catch (error) {
-    console.error('Error sending real-time notification:', error);
-    // Don't fail the request if notification fails
+    await transaction.rollback();
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Registration failed' });
   }
-  
-  res.status(201).json({ message: 'Registration successful', registration });
 }
 
 /**
