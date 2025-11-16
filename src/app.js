@@ -13,7 +13,7 @@ import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
-import { getRedisClient } from './config/redis.js';
+import { createClient } from 'redis';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -52,7 +52,18 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 }
 
 // Session middleware (required for Passport OAuth)
-const redisClient = getRedisClient();
+// Create a separate Redis client for sessions using the standard redis package
+let redisSessionClient;
+try {
+  redisSessionClient = createClient({
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
+  });
+  redisSessionClient.connect();
+  console.log('Connected to Redis for sessions');
+} catch (error) {
+  console.warn('Failed to connect to Redis for sessions:', error.message);
+}
+
 const sessionConfig = {
   secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
   resave: false,
@@ -60,17 +71,16 @@ const sessionConfig = {
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'lax', // Critico per OAuth redirect
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 };
 
 // Use Redis as session store if available, otherwise fallback to MemoryStore
-if (redisClient) {
+if (redisSessionClient) {
   sessionConfig.store = new RedisStore({
-    client: redisClient,
-    prefix: 'session:',
-    ttl: 24 * 60 * 60 // 24 hours in seconds
+    client: redisSessionClient,
+    prefix: 'session:'
   });
   console.log('Using Redis as session store');
 } else {
