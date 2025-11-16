@@ -2,23 +2,12 @@ import Notification from '../models/notification.model.js';
 import { connectMongoDB } from '../config/mongodb.js';
 import { createNotificationObject } from '../dto/notification.dto.js';
 
-/**
- * Salva una notifica nel database MongoDB
- * @param {Object} notificationData - I dati della notifica
- * @param {number} notificationData.userId - ID dell'utente destinatario
- * @param {string} notificationData.type - Tipo di notifica ('registration', 'unregistration', 'report')
- * @param {string} notificationData.title - Titolo della notifica
- * @param {string} notificationData.message - Messaggio della notifica
- * @param {string} notificationData.icon - Icona della notifica
- * @param {string} notificationData.color - Colore della notifica
- * @param {Object} notificationData.data - Dati aggiuntivi della notifica
- */
 export async function saveNotification(notificationData) {
   try {
-    // Assicurati che MongoDB sia connesso
+    // Ensure MongoDB is connected
     await connectMongoDB();
 
-    // Usa il DTO per creare un oggetto standardizzato
+    // Use DTO to create standardized object
     const standardizedData = createNotificationObject(notificationData);
 
     const notification = new Notification(standardizedData);
@@ -26,20 +15,12 @@ export async function saveNotification(notificationData) {
 
     return notification;
   } catch (error) {
-    console.error('Errore nel salvare la notifica:', error);
-    // Non fallire se il salvataggio fallisce
+    console.error('Error saving notification:', error);
+    // Don't fail if saving fails
     return null;
   }
 }
 
-/**
- * Recupera le notifiche di un utente
- * @param {number} userId - ID dell'utente
- * @param {Object} options - Opzioni di query
- * @param {number} options.limit - Numero massimo di notifiche da recuperare
- * @param {number} options.offset - Offset per paginazione
- * @param {boolean} options.unreadOnly - Recupera solo notifiche non lette
- */
 export async function getUserNotifications(userId, options = {}) {
   try {
     await connectMongoDB();
@@ -60,16 +41,11 @@ export async function getUserNotifications(userId, options = {}) {
 
     return notifications;
   } catch (error) {
-    console.error('Errore nel recuperare le notifiche:', error);
+    console.error('Error retrieving notifications:', error);
     return [];
   }
 }
 
-/**
- * Marca una notifica come letta
- * @param {string} notificationId - ID della notifica
- * @param {number} userId - ID dell'utente (per sicurezza)
- */
 export async function markNotificationAsRead(notificationId, userId) {
   try {
     await connectMongoDB();
@@ -81,7 +57,7 @@ export async function markNotificationAsRead(notificationId, userId) {
 
     return result.modifiedCount > 0;
   } catch (error) {
-    console.error('Errore nel marcare la notifica come letta:', error);
+    console.error('Error marking notification as read:', error);
     return false;
   }
 }

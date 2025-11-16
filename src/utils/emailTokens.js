@@ -17,7 +17,7 @@ export async function createVerificationToken(email) {
       await redis.set(`verify:${token}`, email, 'EX', 86400); // 24 ore
       console.log(`Token salvato in Redis per ${email}`);
     } catch (error) {
-      console.error(`Errore salvaggio token Redis:`, error.message);
+      console.error(`Redis token save error:`, error.message);
     }
   } else {
     console.warn('Redis non disponibile, token non salvato');
@@ -40,14 +40,14 @@ export async function verifyEmailToken(token) {
     
     if (email) {
       console.log(`Token trovato per email: ${email}`);
-      await redis.del(`verify:${token}`); // Token usa-e-getta
+      await redis.del(`verify:${token}`); // One-time use token
     } else {
       console.warn(`Token non trovato in Redis: ${token}`);
     }
     
     return email;
   } catch (error) {
-    console.error(`Errore verifica token Redis:`, error.message);
+    console.error(`Redis token verification error:`, error.message);
     return null;
   }
 }

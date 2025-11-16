@@ -3,6 +3,50 @@ import { getIO } from '../config/socket.js';
 import { saveNotification } from '../services/notification.service.js';
 
 /**
+ * Helper function to send registration/unregistration notifications
+ */
+async function sendRegistrationNotification(event, user, currentParticipants, type, registration = null) {
+  const io = getIO();
+
+  const notificationData = {
+    eventId: event.id,
+    eventTitle: event.title,
+    user: {
+      id: user.id,
+      username: user.username,
+      ...(type === 'registration' && { email: user.email })
+    },
+    currentParticipants,
+    capacity: event.capacity,
+    ...(type === 'registration' && registration && { registeredAt: registration.registered_at })
+  };
+
+  const eventName = type === 'registration' ? 'event:new_registration' : 'event:unregistration';
+  const title = type === 'registration' ? 'New registration' : 'Registration cancelled';
+  const message = type === 'registration'
+    ? `${user.username} registered for "${event.title}"`
+    : `${user.username} unregistered from "${event.title}"`;
+  const icon = type === 'registration' ? '✅' : '❌';
+  const color = type === 'registration' ? 'success' : 'warning';
+
+  try {
+    io.to(`user:${event.creator_id}`).emit(eventName, notificationData);
+
+    await saveNotification({
+      userId: event.creator_id,
+      type,
+      title,
+      message,
+      icon,
+      color,
+      data: notificationData
+    });
+  } catch (error) {
+    console.error(`Error sending ${type} real-time notification:`, error);
+  }
+}
+
+/**
  * @desc Register the logged user to an event
  * @route POST /api/registrations/:eventId
  */
@@ -48,41 +92,9 @@ export async function registerToEvent(req, res) {
 
     await transaction.commit();
 
-    // 🔔 REAL-TIME NOTIFICATION to event creator
-    try {
-      const io = getIO();
-      const user = await User.findByPk(userId, { attributes: ['id', 'username', 'email'] });
-
-      const notificationData = {
-        eventId: event.id,
-        eventTitle: event.title,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email
-        },
-        registeredAt: registration.registered_at,
-        currentParticipants: count + 1,
-        capacity: event.capacity
-      };
-
-      // Notify event creator
-      io.to(`user:${event.creator_id}`).emit('event:new_registration', notificationData);
-
-      // 💾 Save notification to MongoDB
-      await saveNotification({
-        userId: event.creator_id,
-        type: 'registration',
-        title: 'Nuova iscrizione',
-        message: `${user.username} si è iscritto a "${event.title}"`,
-        icon: '✅',
-        color: 'success',
-        data: notificationData
-      });
-    } catch (error) {
-      console.error('Error sending real-time notification:', error);
-      // Don't fail the request if notification fails
-    }
+    // Send notification to event creator
+    const user = await User.findByPk(userId, { attributes: ['id', 'username', 'email'] });
+    await sendRegistrationNotification(event, user, count + 1, 'registration', registration);
     
     res.status(201).json({ message: 'Registration successful', registration });
   } catch (error) {
@@ -115,37 +127,9 @@ export async function unregisterFromEvent(req, res) {
 
   await registration.destroy();
   
-  // 🔔 REAL-TIME NOTIFICATION to event creator
-  try {
-    const io = getIO();
-
-    const notificationData = {
-      eventId: event.id,
-      eventTitle: event.title,
-      user: {
-        id: user.id,
-        username: user.username
-      },
-      currentParticipants: count - 1,
-      capacity: event.capacity
-    };
-
-    if (event) {
-      io.to(`user:${event.creator_id}`).emit('event:unregistration', notificationData);
-
-      // 💾 Save notification to MongoDB
-      await saveNotification({
-        userId: event.creator_id,
-        type: 'unregistration',
-        title: 'Cancellazione iscrizione',
-        message: `${user.username} si è cancellato da "${event.title}"`,
-        icon: '❌',
-        color: 'warning',
-        data: notificationData
-      });
-    }
-  } catch (error) {
-    console.error('Error sending real-time notification:', error);
+  // Send notification to event creator
+  if (event) {
+    await sendRegistrationNotification(event, user, count - 1, 'unregistration');
   }
   
   res.json({ message: 'Unregistered successfully' });

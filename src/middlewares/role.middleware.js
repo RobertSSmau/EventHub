@@ -1,9 +1,3 @@
-/**
- * @file role.middleware.js
- * @description Middleware to verify user roles for protected routes.
- * @module middlewares/role
- */
-
 // Check if user has required role
 export function checkRole(requiredRole) {
   return (req, res, next) => {

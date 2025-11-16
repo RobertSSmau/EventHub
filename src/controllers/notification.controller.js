@@ -32,7 +32,7 @@ export async function getNotifications(req, res) {
     console.error('Error fetching notifications:', error);
     res.status(500).json({
       success: false,
-      message: 'Errore nel recupero delle notifiche'
+      message: 'Error retrieving notifications'
     });
   }
 }
@@ -57,14 +57,14 @@ export async function markAsRead(req, res) {
     } else {
       res.status(404).json({
         success: false,
-        message: 'Notifica non trovata'
+        message: 'Notification not found'
       });
     }
   } catch (error) {
     console.error('Error marking notification as read:', error);
     res.status(500).json({
       success: false,
-      message: 'Errore nell\'aggiornamento della notifica'
+      message: 'Error updating notification'
     });
   }
 }
@@ -92,7 +92,7 @@ export async function getNotificationCount(req, res) {
     console.error('Error counting notifications:', error);
     res.status(500).json({
       success: false,
-      message: 'Errore nel conteggio delle notifiche'
+      message: 'Error counting notifications'
     });
   }
 }

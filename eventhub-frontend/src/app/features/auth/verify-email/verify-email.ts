@@ -52,7 +52,7 @@ export class VerifyEmail implements OnInit {
         }
       },
       error: (error) => {
-        console.error('❌ Errore verifica:', error);
+        console.error('❌ Verification error:', error);
         this.status = 'error';
         this.message = error.error?.message || 'Verification failed';
       }

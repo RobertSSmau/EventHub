@@ -1,9 +1,3 @@
-/**
- * @file auth.middleware.js
- * @description Middleware to verify JWT tokens and ensure the user is active.
- * @module middlewares/auth
- */
-
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv-safe';
 import { User } from '../models/index.js';
@@ -11,16 +5,6 @@ import { isBlacklisted } from '../utils/tokenBlacklist.js';
 
 dotenv.config();
 
-/**
- * Middleware that verifies a JWT token and ensures the user exists and is not blocked.
- * 
- * @async
- * @function verifyToken
- * @param {import('express').Request} req
- * @param {import('express').Response} res 
- * @param {import('express').NextFunction} next 
- * @returns {Promise<void>}
- */
 export async function verifyToken(req, res, next) {
   try {
     const authHeader = req.headers.authorization;
@@ -68,17 +52,6 @@ export async function verifyToken(req, res, next) {
   }
 }
 
-/**
- * Optional authentication middleware - verifies token if present, but allows request to continue without it
- * Useful for routes that have different behavior for authenticated vs non-authenticated users
- * 
- * @async
- * @function optionalAuth
- * @param {import('express').Request} req
- * @param {import('express').Response} res 
- * @param {import('express').NextFunction} next 
- * @returns {Promise<void>}
- */
 export async function optionalAuth(req, res, next) {
   try {
     const authHeader = req.headers.authorization;

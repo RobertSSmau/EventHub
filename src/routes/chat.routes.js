@@ -1,6 +1,8 @@
 /**
- * Chat Routes
- * REST API endpoints for chat functionality
+ * @openapi
+ * tags:
+ *   name: Chat
+ *   description: Chat and messaging functionality
  */
 
 import { Router } from 'express';
@@ -24,8 +26,8 @@ const router = Router();
 router.use(verifyToken);
 
 /**
- * @swagger
- * /api/chat/conversations:
+ * @openapi
+ * /chat/conversations:
  *   get:
  *     summary: Get all conversations for current user
  *     tags: [Chat]
@@ -38,8 +40,8 @@ router.use(verifyToken);
 router.get('/conversations', getMyConversations);
 
 /**
- * @swagger
- * /api/chat/conversations/direct:
+ * @openapi
+ * /chat/conversations/direct:
  *   post:
  *     summary: Create or get direct conversation with another user
  *     tags: [Chat]
@@ -73,8 +75,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/chat/conversations/event/{eventId}:
+ * @openapi
+ * /chat/conversations/event/{eventId}:
  *   post:
  *     summary: Join or create event group conversation
  *     tags: [Chat]
@@ -101,8 +103,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/chat/conversations/{conversationId}/messages:
+ * @openapi
+ * /chat/conversations/{conversationId}/messages:
  *   get:
  *     summary: Get messages for a conversation
  *     tags: [Chat]
@@ -143,8 +145,8 @@ router.get(
 );
 
 /**
- * @swagger
- * /api/chat/conversations/{conversationId}/messages:
+ * @openapi
+ * /chat/conversations/{conversationId}/messages:
  *   post:
  *     summary: Send a message (alternative to Socket.IO)
  *     tags: [Chat]
@@ -190,8 +192,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/chat/conversations/{conversationId}/read:
+ * @openapi
+ * /chat/conversations/{conversationId}/read:
  *   post:
  *     summary: Mark conversation as read
  *     tags: [Chat]
@@ -218,8 +220,8 @@ router.post(
 );
 
 /**
- * @swagger
- * /api/chat/messages/{messageId}:
+ * @openapi
+ * /chat/messages/{messageId}:
  *   patch:
  *     summary: Edit a message
  *     tags: [Chat]
@@ -260,8 +262,8 @@ router.patch(
 );
 
 /**
- * @swagger
- * /api/chat/messages/{messageId}:
+ * @openapi
+ * /chat/messages/{messageId}:
  *   delete:
  *     summary: Delete a message
  *     tags: [Chat]
@@ -288,8 +290,8 @@ router.delete(
 );
 
 /**
- * @swagger
- * /api/chat/online:
+ * @openapi
+ * /chat/online:
  *   get:
  *     summary: Check online status of users
  *     tags: [Chat]

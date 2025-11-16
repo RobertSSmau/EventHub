@@ -31,8 +31,12 @@ export function initSocketIO(server) {
   // Determine correct origin based on environment
   const getSocketOrigin = () => {
     if (process.env.NODE_ENV === 'production') {
-      // In production, use FRONTEND_URL if set, otherwise fallback to common patterns
-      return process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://yourdomain.com';
+      // In production, FRONTEND_URL is required
+      const frontendUrl = process.env.FRONTEND_URL || process.env.CLIENT_URL;
+      if (!frontendUrl) {
+        throw new Error('FRONTEND_URL or CLIENT_URL environment variable is required in production');
+      }
+      return frontendUrl;
     }
     // In development, allow localhost
     return process.env.FRONTEND_URL || process.env.CLIENT_URL || 'http://localhost:4200';

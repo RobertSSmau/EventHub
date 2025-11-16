@@ -18,8 +18,8 @@ export async function initEmail() {
     console.log('SendGrid configurato correttamente');
     return emailService;
   } catch (error) {
-    console.error('Errore configurazione SendGrid:', error.message);
-    console.warn('Email service fallito. Email non verranno inviate.');
+    console.error('SendGrid configuration error:', error.message);
+    console.warn('Email service failed. Emails will not be sent.');
     return null;
   }
 }
@@ -60,7 +60,7 @@ export async function sendVerificationEmail(email, token) {
     console.log('Email verifica inviata a:', email);
     return true;
   } catch (error) {
-    console.error('Errore invio email verifica:', error.message);
+    console.error('Error sending verification email:', error.message);
     return false;
   }
 }
