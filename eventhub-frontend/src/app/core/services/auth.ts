@@ -52,9 +52,9 @@ export class AuthService {
   }
 
   register(data: RegisterRequest): Observable<AuthResponse> {
-    return this.api.post<AuthResponse>('/auth/register', data).pipe(
-      tap(async response => await this.handleAuthResponse(response))
-    );
+    return this.api.post<AuthResponse>('/auth/register', data);
+    // Note: Registration does not automatically log in the user
+    // They must verify their email first
   }
 
   logout(): Observable<void> {
@@ -111,6 +111,11 @@ export class AuthService {
   }
 
   private async handleAuthResponse(response: AuthResponse): Promise<void> {
+    if (!response.token) {
+      // No token means user is not logged in (e.g., unverified registration)
+      return;
+    }
+    
     localStorage.setItem('token', response.token);
     localStorage.setItem('user', JSON.stringify(response.user));
     this.currentUserSubject.next(response.user);

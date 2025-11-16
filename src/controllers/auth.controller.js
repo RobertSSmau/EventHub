@@ -32,17 +32,31 @@ export async function register(req, res) {
     await newUser.save();
   }
 
-  const token = generateToken(newUser);
-  res.status(201).json({ 
-    message: 'User registered successfully. Please check your email to verify your account.',
-    token,
-    user: {
-      id: newUser.id,
-      username: newUser.username,
-      email: newUser.email,
-      role: newUser.role
-    }
-  });
+  if (newUser.email_verified) {
+    // Only generate token if email is verified (OAuth or dev mode)
+    const token = generateToken(newUser);
+    res.status(201).json({ 
+      message: 'User registered successfully.',
+      token,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  } else {
+    // Email not verified, don't log in
+    res.status(201).json({ 
+      message: 'User registered successfully. Please check your email to verify your account.',
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        role: newUser.role
+      }
+    });
+  }
 }
 
 export async function login(req, res) {
