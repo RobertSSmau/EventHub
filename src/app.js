@@ -12,7 +12,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import passport from './config/passport.js';
 import session from 'express-session';
-import RedisStore from 'connect-redis';
+import { RedisStore } from 'connect-redis';
 import { getRedisClient } from './config/redis.js';
 
 const __filename = fileURLToPath(import.meta.url);
